@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# env files (rất quan trọng để không đẩy API key, DB credentials...)
+.env
+.env.*
+
+# build
+dist/
+build/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS-specific & misc
+.DS_Store
+Thumbs.db
+
+# editor & IDE
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
