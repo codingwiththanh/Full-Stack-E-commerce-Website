@@ -3,6 +3,7 @@ import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
 import ProductItem from '../components/ProductItem';
+import { slugifyCategory } from '../components/ProductItem';
 
 const Shirt = () => {
     const { products } = useContext(ShopContext);
@@ -20,10 +21,13 @@ const Shirt = () => {
     };
 
     const applyFilter = () => {
-        let result = products.filter(item => item.category === 'Áo');
+        // chuyển điều kiện lọc cho khớp dữ liệu từ API
+        let result = products.filter(item => slugifyCategory(item.category) === 'ao');
+
         if (subCategory.length > 0) {
             result = result.filter(item => subCategory.includes(item.subCategory));
         }
+
         setFiltered(result);
     };
 
@@ -78,7 +82,6 @@ const Shirt = () => {
                         >
                             Áo Sơ Mi
                         </p>
-
                     </div>
                 </div>
             </div>
@@ -98,7 +101,7 @@ const Shirt = () => {
                 </div>
                 <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6'>
                     {filtered.map((item, index) => (
-                        <ProductItem key={index} {...item} />
+                        <ProductItem key={index} id={item._id} {...item} />
                     ))}
                 </div>
             </div>

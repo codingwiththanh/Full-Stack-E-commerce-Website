@@ -77,7 +77,22 @@ const Navbar = () => {
                     <img onClick={() => { setShowSearch(true); navigate('/collection') }} src={assets.search_icon} className='w-5 cursor-pointer' alt="" />
 
                     <div className='group relative'>
-                        <img className='w-5 cursor-pointer' src={assets.profile_icon} alt="" />
+                        <div className="relative group">
+                            <img className="w-5 cursor-pointer" src={assets.profile_icon} alt="" />
+                            <span
+                                className={`
+                                absolute bottom-[-3px] right-[-3px] w-2 h-2 rounded-full
+                                ${token ? 'bg-green-500' : 'bg-yellow-400'}
+                                `}
+                            ></span>
+
+                            {!token && (
+                                <div className='absolute top-[120%] left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-800 text-white text-xs rounded px-2 py-1 hidden group-hover:block z-50'>
+                                    Bạn cần đăng nhập trước
+                                </div>
+                            )}
+                        </div>
+
                         {/* Dropdown Menu */}
                         {token &&
                             <div className='group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-50'>
@@ -90,7 +105,7 @@ const Navbar = () => {
                     </div>
                     <Link to='/cart' className='relative'>
                         <img src={assets.cart_icon} className='w-5 cursor-pointer' alt="" />
-                        <p className='absolute right-[-5px] bottom-[-5px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]'>{getCartCount()}</p>
+                        <p className='absolute right-[-5px] bottom-[-5px] w-[17px] text-center leading-[17px] bg-black text-white aspect-square rounded-full text-[8px]'>{getCartCount()}</p>
                     </Link>
                     <img onClick={() => setVisible(true)} src={assets.menu_icon} className='w-5 cursor-pointer sm:hidden' alt="" />
                 </div>

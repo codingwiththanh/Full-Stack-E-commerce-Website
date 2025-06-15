@@ -6,7 +6,7 @@ import RelatedProducts from '../components/RelatedProducts';
 
 const Product = () => {
 
-  const { productId } = useParams();
+  const { category, productId } = useParams();
   const { products, currency ,addToCart } = useContext(ShopContext);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState('')
@@ -35,15 +35,15 @@ const Product = () => {
 
         {/*---------- Product Images------------- */}
         <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full'>
+          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal w-[142px]'>
             {
               productData.image.map((item, index) => (
                 <img onClick={() => setImage(item)} src={item} key={index} className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer' alt="" />
               ))
             }
           </div>
-          <div className='w-full sm:w-[80%]'>
-            <img className='w-full h-auto' src={image} alt="" />
+          <div className='w-[610px] h-[610px] object-cover'>
+            <img src={image} alt="" />
           </div>
         </div>
 
@@ -60,7 +60,8 @@ const Product = () => {
               <p className='pl-2'>(122)</p>
           </div>
           <p className='mt-5 text-3xl font-medium'>{productData.price}{currency}</p>
-          <p className='mt-5 md:w-4/5 whitespace-pre-wrap break-words text-gray-800'>{productData.description}</p>
+          <p>Thông tin sản phẩm: </p>
+          <p className='md:w-4/5 whitespace-pre-wrap break-words text-gray-800'>{productData.description}</p>
           <div className='flex flex-col gap-4 my-8'>
               <p>Select Size</p>
               <div className='flex gap-2'>
@@ -81,13 +82,11 @@ const Product = () => {
             <b className='border w-1/2 text-center py-3 text-lg font-medium'>Mô tả </b>
             <p className='border w-1/2 text-center py-3 text-lg font-medium'>Đánh giá (122)</p>
           </div>
-          <div className='flex flex-col gap-4 px-2 py-4 text-sm text-gray-500'>
-            <p>Thông tin sản phẩm:br <br />
-              - Chất liệu: Cotton <br />
-              - Form: Oversize <br />
-              - Thiết kế: In lụa</p>
+          <div className='flex flex-col px-2 my-6 text-sm text-gray-500'>
+            <p>Thông tin sản phẩm: </p>
+            <p className='md:w-4/5 whitespace-pre-wrap break-words text-gray-800'>{productData.description}</p>
           </div>
-          <img src={productData.image[1]} alt="thumbnail" className='' />
+          <img src={productData.image[3]} alt="thumbnail" className='w-full' />
         </div>
         <div>
           <br />

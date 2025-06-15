@@ -3,6 +3,7 @@ import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
 import ProductItem from '../components/ProductItem';
+import { slugifyCategory } from '../components/ProductItem';
 
 const Accessories = () => {
     const { products } = useContext(ShopContext);
@@ -20,10 +21,13 @@ const Accessories = () => {
     };
 
     const applyFilter = () => {
-        let result = products.filter(item => item.category === 'Phụ kiện');
+        // chuyển điều kiện lọc cho khớp dữ liệu từ API
+        let result = products.filter(item => slugifyCategory(item.category) === 'phukien');
+
         if (subCategory.length > 0) {
             result = result.filter(item => subCategory.includes(item.subCategory));
         }
+
         setFiltered(result);
     };
 
@@ -59,7 +63,7 @@ const Accessories = () => {
                 <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} sm:block`}>
                     <p className='mb-3 text-sm font-medium'>TYPE</p>
                     <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
-                    <p
+                        <p
                             className={`cursor-pointer ${subCategory.includes('Mũ') ? 'text-sky-500 font-medium' : ''}`}
                             onClick={() => toggleSubCategory({ target: { value: 'Mũ' } })}
                         >
@@ -97,7 +101,11 @@ const Accessories = () => {
                 </div>
                 <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6'>
                     {filtered.map((item, index) => (
-                        <ProductItem key={index} {...item} />
+                        <ProductItem key={index} id={item._id} {...item} />
+
+
+
+
                     ))}
                 </div>
             </div>
