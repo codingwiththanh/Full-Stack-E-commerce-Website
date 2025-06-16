@@ -1,24 +1,23 @@
+// ✅ File: middleware/auth.js
 import jwt from 'jsonwebtoken';
 
-// Middleware cho đơn hàng
+// Xác thực thông qua token trong headers.token (DÙNG CHO GIỎ HÀNG, ĐƠN HÀNG)
 const authUser = async (req, res, next) => {
     const { token } = req.headers;
-
     if (!token) {
-        return res.json({ success: false, message: 'Not Authorized Login Again' });
+        return res.status(401).json({ success: false, message: 'Not Authorized' });
     }
 
     try {
-        const token_decode = jwt.verify(token, process.env.JWT_SECRET);
-        req.body.userId = token_decode.id;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.id; // ✅ Đảm bảo userId luôn có mặt
         next();
     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
+        return res.status(401).json({ success: false, message: 'Token Invalid' });
     }
 };
 
-// Middleware chuẩn Bearer Token cho user info, password...
+// Xác thực chuẩn Bearer Token (DÙNG CHO PROFILE, MẬT KHẨU)
 const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -30,12 +29,11 @@ const verifyToken = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.body.userId = decoded.id;
+        req.userId = decoded.id; // ✅ Thống nhất
         next();
     } catch (error) {
-        console.error("JWT decode error:", error);
         return res.status(401).json({ success: false, message: 'Token không hợp lệ hoặc đã hết hạn.' });
     }
 };
 
-export { authUser, verifyToken }; 
+export { authUser, verifyToken };
