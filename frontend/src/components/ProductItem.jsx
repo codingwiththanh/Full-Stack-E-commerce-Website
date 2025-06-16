@@ -19,7 +19,7 @@ const ProductItem = ({ id, image, name, price, category }) => {
     <Link
       onClick={() => scrollTo(0, 0)}
       className='text-gray-700 cursor-pointer mb-8'
-      to={`/${slug}/product/${id}`}
+      to={`/${slug}/sanpham/${id}`}
     >
       <div className='overflow-hidden'>
         <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt="" />
@@ -30,4 +30,4 @@ const ProductItem = ({ id, image, name, price, category }) => {
   );
 };
 
-export default ProductItem;
+export default ProductItem; 
