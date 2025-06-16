@@ -1,38 +1,44 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
-import Title from '../components/Title';
 import ProductItem from '../components/ProductItem';
-import { slugifyCategory } from '../components/ProductItem';
 
 const Accessories = () => {
     const { products } = useContext(ShopContext);
     const [showFilter, setShowFilter] = useState(false);
     const [filtered, setFiltered] = useState([]);
-    const [subCategory, setSubCategory] = useState([]);
+    const [subCategory, setSubCategory] = useState('');
     const [sortType, setSortType] = useState('relavent');
 
+    const sortOptions = [
+        { value: 'low-high', label: 'Thấp đến Cao' },
+        { value: 'high-low', label: 'Cao đến Thấp' }
+    ];
+
     const toggleSubCategory = (e) => {
-        if (subCategory.includes(e.target.value)) {
-            setSubCategory(prev => prev.filter(item => item !== e.target.value));
-        } else {
-            setSubCategory(prev => [...prev, e.target.value]);
-        }
+        const selected = e.target.value;
+        setSubCategory(prev => (prev === selected ? '' : selected));
     };
 
+    const normalize = (str) => {
+        return str
+            ?.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    };
+
+
     const applyFilter = () => {
-        // chuyển điều kiện lọc cho khớp dữ liệu từ API
-        let result = products.filter(item => slugifyCategory(item.category) === 'phukien');
-
-        if (subCategory.length > 0) {
-            result = result.filter(item => subCategory.includes(item.subCategory));
+        let result = products.filter(item => normalize(item.category) === 'phu kien');
+        if (subCategory) {
+            result = result.filter(item => normalize(item.subCategory) === normalize(subCategory));
         }
-
         setFiltered(result);
     };
 
     const sortProduct = () => {
-        let copy = filtered.slice();
+        let copy = [...filtered];
         switch (sortType) {
             case 'low-high':
                 setFiltered(copy.sort((a, b) => a.price - b.price));
@@ -48,6 +54,7 @@ const Accessories = () => {
 
     useEffect(() => {
         applyFilter();
+        console.log("Danh sách category thực tế:", products.map(p => p.category));
     }, [products, subCategory]);
 
     useEffect(() => {
@@ -55,57 +62,46 @@ const Accessories = () => {
     }, [sortType]);
 
     return (
-        <div className='flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t'>
-            <div className='min-w-60'>
-                <p onClick={() => setShowFilter(!showFilter)} className='my-2 text-xl flex items-center cursor-pointer gap-2'>FILTERS
-                    <img className={`h-3 sm:hidden ${showFilter ? 'rotate-90' : ''}`} src={assets.dropdown_icon} alt='' />
+        <div className="flex flex-col sm:flex-row gap-4 pt-10">
+            <div className="w-[205px]">
+                <div className="text-lg relative group">
+                    <div className="border-2 border-gray-300 text-sm pl-4 pr-8 py-2 w-full cursor-pointer flex justify-between items-center bg-white hover:border-[#FF1461] transition-colors">
+                        <span>Sắp xếp giá</span>
+                        <img src={assets.dropdown_icon} alt="dropdown icon" className={`h-3 sm:hidden transition-transform duration-200`} />
+                    </div>
+                    <ul className="absolute top-full left-0 w-full bg-white border-2 border-gray-300 mt-1 z-10 shadow-lg opacity-0 max-h-0 group-hover:opacity-100 group-hover:max-h-40 transition-all duration-200 overflow-hidden">
+                        {sortOptions.map(option => (
+                            <li key={option.value} onClick={() => setSortType(option.value)} className="px-4 py-2 text-sm hover:bg-neutral-100 hover:text-[#FF1461] cursor-pointer transition-colors duration-200">
+                                {option.label}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <p onClick={() => setShowFilter(!showFilter)} className="text-lg flex items-center cursor-pointer gap-2 font-semibold py-2 pl-2 hover:text-[#FF1461] transition-colors duration-200">
+                    Danh mục
+                    <img src={assets.dropdown_icon} alt="dropdown icon" className={`h-3 sm:hidden transition-transform duration-200 ${showFilter ? 'rotate-90' : ''}`} />
                 </p>
-                <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} sm:block`}>
-                    <p className='mb-3 text-sm font-medium'>TYPE</p>
-                    <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
-                        <p
-                            className={`cursor-pointer ${subCategory.includes('Mũ') ? 'text-sky-500 font-medium' : ''}`}
-                            onClick={() => toggleSubCategory({ target: { value: 'Mũ' } })}
-                        >
-                            Mũ
-                        </p>
-                        <p
-                            className={`cursor-pointer ${subCategory.includes('Balo') ? 'text-sky-500 font-medium' : ''}`}
-                            onClick={() => toggleSubCategory({ target: { value: 'Balo' } })}
-                        >
-                            Balo
-                        </p>
-                        <p
-                            className={`cursor-pointer ${subCategory.includes('Túi Sách') ? 'text-sky-500 font-medium' : ''}`}
-                            onClick={() => toggleSubCategory({ target: { value: 'Túi Sách' } })}
-                        >
-                            Túi Sách
-                        </p>
 
-
+                <div className={`${showFilter ? 'block' : 'hidden'} sm:block`}>
+                    <div className="flex flex-col gap-1 text-[15px] font-light text-gray-700">
+                        {['Mũ', 'Balo', 'Túi sách'].map(item => (
+                            <p
+                                key={item}
+                                className={`cursor-pointer px-3 py-[6px] transition-all duration-200 ease-in-out ${subCategory === item ? 'bg-[#fff0f4] text-[#FF1461] font-medium shadow-inner' : 'hover:bg-neutral-100 hover:text-[#FF1461]'}`}
+                                onClick={() => toggleSubCategory({ target: { value: item } })}
+                            >
+                                {item}
+                            </p>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            <div className='flex-1'>
-                <div className='flex justify-between text-base sm:text-2xl mb-4'>
-                    <Title text1={'ALL'} text2={'COLLECTIONS'} />
-                    <select
-                        onChange={(e) => setSortType(e.target.value)}
-                        className='border-2 border-gray-300 text-sm px-2'
-                    >
-                        <option value='relavent'>Sort by: Relavent</option>
-                        <option value='low-high'>Sort by: Low to High</option>
-                        <option value='high-low'>Sort by: High to Low</option>
-                    </select>
-                </div>
-                <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6'>
+            <div className="flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6">
                     {filtered.map((item, index) => (
                         <ProductItem key={index} id={item._id} {...item} />
-
-
-
-
                     ))}
                 </div>
             </div>

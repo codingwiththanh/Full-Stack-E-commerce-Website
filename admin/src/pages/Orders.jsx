@@ -99,11 +99,7 @@ const Orders = ({ token }) => {
               <img className='w-12 pt-[10px]' src={assets.parcel_icon} alt="" />
               <div>
                 <p className="mt-2 text-[13px] font-semibold text-sky-500">Mã đơn hàng: {order.orderCode}</p>
-                <p className='text-pink-500'>
-                  Trạng thái: <span style={{ color: order.status === "Đã huỷ" ? "red" : "green" }}>
-                    {statusTranslate[order.status] || order.status}
-                  </span>
-                </p>
+
 
 
                 <div className='mt-[20px]'>

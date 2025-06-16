@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
-
+import { assets } from '../assets/assets';
+import Title from '../components/Title';
 const Profile = () => {
     const { token } = useContext(ShopContext);
     const [user, setUser] = useState({});
@@ -85,70 +86,81 @@ const Profile = () => {
     };
 
     return (
-        <div className="max-w-xl mx-auto py-10 px-4">
-            <h2 className="text-2xl font-semibold mb-4">Thông tin tài khoản</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <input
-                    type="text"
-                    name="name"
-                    placeholder="Tên"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="border px-4 py-2 rounded"
-                />
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="border px-4 py-2 rounded"
-                />
+        <div className="flex justify-center items-center">
+            <div className="flex flex-col sm:flex-row justify-center items-center my-8 gap-8 flex-wrap shadow-2xl w-[90%] max-w-4xl bg-white ">
+                <div className="w-[405px] h-[525px]">
+                    <img
+                        src={assets.meme1}
+                        alt="Hình minh họa đăng nhập"
+                        className="object-cover w-full h-full "
+                    />
+                </div>
 
-                <button
-                    type="button"
-                    className="text-blue-600 underline text-sm text-left"
-                    onClick={() => setShowPasswordFields((prev) => !prev)}
-                >
-                    {showPasswordFields ? "Ẩn đổi mật khẩu" : "Đổi mật khẩu"}
-                </button>
+                <form onSubmit={handleSubmit} className="flex flex-col items-center w-full sm:w-[45%] gap-4 text-gray-800">
+                    <Title text1={'TÀI KHOẢN'} text2={'CỦA BẠN'} />
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="Tên"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                    />
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                    />
 
-                {showPasswordFields && (
-                    <>
-                        <input
-                            type="password"
-                            name="currentPassword"
-                            placeholder="Mật khẩu hiện tại"
-                            value={passwordData.currentPassword}
-                            onChange={handlePasswordChange}
-                            className="border px-4 py-2 rounded"
-                        />
-                        <input
-                            type="password"
-                            name="newPassword"
-                            placeholder="Mật khẩu mới"
-                            value={passwordData.newPassword}
-                            onChange={handlePasswordChange}
-                            className="border px-4 py-2 rounded"
-                        />
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            placeholder="Xác nhận mật khẩu"
-                            value={passwordData.confirmPassword}
-                            onChange={handlePasswordChange}
-                            className="border px-4 py-2 rounded"
-                        />
-                    </>
-                )}
+                    <button
+                        type="button"
+                        className="text-blue-600 underline text-sm text-left "
+                        onClick={() => setShowPasswordFields((prev) => !prev)}
+                    >
+                        {showPasswordFields ? "Huỷ đổi mật khẩu" : "Đổi mật khẩu"}
+                    </button>
 
-                <button
-                    type="submit"
-                    className="bg-black text-white py-2 px-4 rounded hover:opacity-80"
-                >
-                    Lưu thay đổi
-                </button>
-            </form>
+                    {showPasswordFields && (
+                        <>
+                            <input
+                                type="password"
+                                name="currentPassword"
+                                placeholder="Mật khẩu hiện tại"
+                                value={passwordData.currentPassword}
+                                onChange={handlePasswordChange}
+                                className="w-full px-3 py-2 border border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                            />
+                            <input
+                                type="password"
+                                name="newPassword"
+                                placeholder="Mật khẩu mới"
+                                value={passwordData.newPassword}
+                                onChange={handlePasswordChange}
+                                className="w-full px-3 py-2 border border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                            />
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                placeholder="Xác nhận mật khẩu"
+                                value={passwordData.confirmPassword}
+                                onChange={handlePasswordChange}
+                                className="w-full px-3 py-2 border border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                            />
+                        </>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="bg-stone-900 text-[#FF1461] uppercase font-medium px-8 py-2 mt-4 hover:bg-neutral-600 transition w-full"
+                    >
+                        Lưu thay đổi
+                    </button>
+                </form>
+
+            </div>
         </div>
     );
 };

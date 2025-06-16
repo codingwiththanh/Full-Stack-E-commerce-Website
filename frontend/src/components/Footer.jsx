@@ -10,24 +10,24 @@ const Footer = () => {
 
         <div>
           <Link to='/'>
-            <p className='font-extrabold text-4xl' > FREESTYLE</p>
+            <p className='font-extrabold text-4xl text-[#FF1461]' > FREESTYLE</p>
           </Link>
-          <p className='w-full  text-gray-600 mt-4'>
+          <p className='w-full  text-neutral-900 mt-4'>
             CÔNG TY CỔ PHẦN THỜI TRANG KOWIL VIỆT NAM <br />
             Hotline: 1900 8079 <br />
             8:30 - 19:00 tất cả các ngày trong tuần.
           </p>
-          <p className='w-full md:w-5/6  text-gray-600 text-[12px] mt-8'>
+          <p className='w-full md:w-5/6   text-neutral-900 text-[12px] mt-8'>
             <b>VP Phía Bắc:</b> Tầng 17 tòa nhà Viwaseen, 48 Phố Tố Hữu, Trung Văn, Nam Từ Liêm, Hà Nội.
           </p>
-          <p className='w-full md:w-5/6  text-gray-600 text-[12px]'>
+          <p className='w-full md:w-5/6   text-neutral-900 text-[12px]'>
             <b>VP Phía Nam:</b> 186A Nam Kỳ Khởi Nghĩa, Phường Võ Thị Sáu, Quận 3, TP.HCM
           </p>
         </div>
 
         <div>
           <p className='text-[16px] font-extrabold mb-5'>GIỚI THIỆU FREESTYLE</p>
-          <ul className='flex flex-col gap-1 text-gray-600'>
+          <ul className='flex flex-col gap-1  text-[#FF1461]'>
             <li className='mb-2'>Gới thiệu</li>
             <li className='mb-2'>Hệ thống cửa hàng</li>
             <li className='mb-2'>Liên hệ FREESTYLE</li>
@@ -37,7 +37,7 @@ const Footer = () => {
 
         <div>
           <p className='text-[16px] font-extrabold mb-5'>HỖ TRỢ KHÁCH HÀNG</p>
-          <ul className='flex flex-col gap-1 text-gray-600'>
+          <ul className='flex flex-col gap-1  text-[#FF1461]'>
             <li className='mb-2'>Hỏi đáp</li>
             <li className='mb-2'>Chính sách vận chuyển</li>
             <li className='mb-2'>Hướng dẫn chọn kích cỡ</li>
@@ -49,14 +49,14 @@ const Footer = () => {
 
         <div>
           <p className='text-[16px] font-extrabold mb-5'>KẾT NỐI</p>
-          <ul className='flex flex-col gap-1 text-gray-600'>
+          <ul className='flex flex-col gap-1  text-[#FF1461]'>
             <div className='flex gap-2 mb-4'>
               <img src={assets.facebook} alt="" className='w-8' />
               <img src={assets.instagram} alt="" className='w-8' />
               <img src={assets.tiktok} alt="" className='w-8' />
             </div>
             <li className='mb-4 text-[16px]'>freestyle@foreveryou.com</li>
-            <img src={assets.logoSaleNoti} alt="" className='w-40'/>
+            <img src={assets.logoSaleNoti} alt="" className='w-40' />
           </ul>
         </div>
 

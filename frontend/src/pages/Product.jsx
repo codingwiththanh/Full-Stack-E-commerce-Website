@@ -7,10 +7,10 @@ import RelatedProducts from '../components/RelatedProducts';
 const Product = () => {
 
   const { category, productId } = useParams();
-  const { products, currency ,addToCart } = useContext(ShopContext);
+  const { products, currency, addToCart } = useContext(ShopContext);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState('')
-  const [size,setSize] = useState('')
+  const [size, setSize] = useState('')
 
   const fetchProductData = async () => {
 
@@ -26,7 +26,7 @@ const Product = () => {
 
   useEffect(() => {
     fetchProductData();
-  }, [productId,products])
+  }, [productId, products])
 
   return productData ? (
     <div className='pt-10 transition-opacity ease-in duration-500 opacity-100'>
@@ -35,14 +35,14 @@ const Product = () => {
 
         {/*---------- Product Images------------- */}
         <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal w-[142px]'>
+          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal lg:w-[142px]'>
             {
               productData.image.map((item, index) => (
                 <img onClick={() => setImage(item)} src={item} key={index} className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer' alt="" />
               ))
             }
           </div>
-          <div className='w-[610px] h-[610px] object-cover'>
+          <div className='lg:w-[610px] lg:h-[610px] object-cover'>
             <img src={image} alt="" />
           </div>
         </div>
@@ -52,28 +52,43 @@ const Product = () => {
         <div className='flex-3'>
           <h1 className='lg:w-[448px] font-medium text-2xl mt-2'>{productData.name}</h1>
           <div className=' flex items-center gap-1 mt-2'>
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_icon} alt="" className="w-3 5" />
-              <img src={assets.star_dull_icon} alt="" className="w-3 5" />
-              <p className='pl-2'>(122)</p>
+            <img src={assets.star_icon} alt="" className="w-3 5" />
+            <img src={assets.star_icon} alt="" className="w-3 5" />
+            <img src={assets.star_icon} alt="" className="w-3 5" />
+            <img src={assets.star_icon} alt="" className="w-3 5" />
+            <img src={assets.star_dull_icon} alt="" className="w-3 5" />
+            <p className='pl-2'>(122)</p>
           </div>
-          <p className='mt-5 text-3xl font-medium'>{productData.price}{currency}</p>
+          <p className='mt-5 text-3xl font-medium'>{productData.price.toLocaleString('vi-VN')}{currency}</p>
           <p>Thông tin sản phẩm: </p>
           <p className='md:w-4/5 whitespace-pre-wrap break-words text-gray-800'>{productData.description}</p>
           <div className='flex flex-col gap-4 my-8'>
-              <p>Select Size</p>
-              <div className='flex gap-2'>
-                {productData.sizes.map((item,index)=>(
-                  <button onClick={()=>setSize(item)} className={`border py-2 px-4 bg-gray-100 ${item === size ? 'border-orange-500' : ''}`} key={index}>{item}</button>
-                ))}
-              </div>
+            <p>Chọn Kích Cỡ :</p>
+            <div className="flex gap-2">
+              {productData.sizes && productData.sizes.length > 0 ? (
+                productData.sizes.map((item, index) => (
+                  <button
+                    onClick={() => setSize(item)}
+                    className={`border py-2 px-4 bg-gray-100 ${item === size ? 'border-orange-500' : ''}`}
+                    key={index}
+                  >
+                    {item}
+                  </button>
+                ))
+              ) : (
+                <button
+                  onClick={() => setSize('default')}
+                  className={`border py-2 px-4 bg-gray-100 ${size === 'default' ? 'border-orange-500' : ''}`}
+                >
+                  Không có kích cỡ
+                </button>
+              )}
+            </div>
           </div>
-          <button onClick={()=>addToCart(productData._id,size)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700'>ADD TO CART</button>
+          <button onClick={() => addToCart(productData._id, size)} className='bg-neutral-900 text-white px-8 py-3 text-sm active:bg-neutral-900 w-full lg:w-1/2'>THÊM VÀO GIỎ HÀNG</button>
         </div>
       </div>
-      
+
 
       {/* ---------- Description & Review Section ------------- */}
       <div className='mt-20 lg:w-[763px]'>
@@ -94,7 +109,7 @@ const Product = () => {
           <p>You will never be younger than you are at this very moment “Enjoy Your Youth!”</p> <br />
           <p>Không chỉ là thời trang, FREESTYLE còn là “phòng thí nghiệm” của tuổi trẻ - nơi nghiên cứu và cho ra đời năng lượng mang tên “Youth”. Chúng mình luôn muốn tạo nên những trải nghiệm vui vẻ, năng động và trẻ trung. <br />
             Lấy cảm hứng từ giới trẻ, sáng tạo liên tục, bắt kịp xu hướng và phát triển đa dạng các dòng sản phẩm là cách mà chúng mình hoạt động để tạo nên phong cách sống hằng ngày của bạn. Mục tiêu của TEELAB là cung cấp các sản phẩm thời trang chất lượng cao với giá thành hợp lý. <br />
-            Chẳng còn thời gian để loay hoay nữa đâu youngers ơi! Hãy nhanh chân bắt lấy những những khoảnh khắc tuyệt vời của tuổi trẻ.</p> <br /> 
+            Chẳng còn thời gian để loay hoay nữa đâu youngers ơi! Hãy nhanh chân bắt lấy những những khoảnh khắc tuyệt vời của tuổi trẻ.</p> <br />
           <p>FREESTYLE đã sẵn sàng trải nghiệm cùng bạn! “Enjoy Your Youth”, now!</p>
         </div>
         <div className='bg-[#F9F5F2] my-8'>
@@ -107,7 +122,7 @@ const Product = () => {
           - Sản phẩm còn mới nguyên tem, tags và mang theo hoá đơn mua hàng, sản phẩm chưa giặt và không dơ bẩn, hư hỏng bởi những tác nhân bên ngoài cửa hàng sau khi mua hàng.
         </p>
       </div>
-  
+
       <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
 
     </div>

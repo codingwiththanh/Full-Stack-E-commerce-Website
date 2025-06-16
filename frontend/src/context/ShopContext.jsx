@@ -7,7 +7,7 @@ export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
     const currency = "VNĐ";
-    const delivery_fee = 10;
+    const delivery_fee = 30000;
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const [search, setSearch] = useState("");
     const [showSearch, setShowSearch] = useState(false);
@@ -69,7 +69,10 @@ const ShopContextProvider = (props) => {
         setCartItems(updatedCart);
 
         try {
-            await axiosInstance.post("/api/cart/add", { itemId, size });
+            await axios.post(`${backendUrl}/api/cart/add`, { itemId, size }, {
+                headers: { token }
+            });
+              
         } catch (error) {
             console.log(error);
             toast.error(error.message);

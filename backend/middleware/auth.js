@@ -1,21 +1,24 @@
-// ✅ File: middleware/auth.js
-import jwt from 'jsonwebtoken';
+
 
 // Xác thực thông qua token trong headers.token (DÙNG CHO GIỎ HÀNG, ĐƠN HÀNG)
-const authUser = async (req, res, next) => {
-    const { token } = req.headers;
+import jwt from "jsonwebtoken";
+
+const authUser = (req, res, next) => {
+    const token = req.headers.token;
+
     if (!token) {
-        return res.status(401).json({ success: false, message: 'Not Authorized' });
+        return res.status(401).json({ success: false, message: "Không có token trong header" });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.userId = decoded.id; // ✅ Đảm bảo userId luôn có mặt
+        req.userId = decoded.id;
         next();
-    } catch (error) {
-        return res.status(401).json({ success: false, message: 'Token Invalid' });
+    } catch (err) {
+        return res.status(401).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn" });
     }
 };
+
 
 // Xác thực chuẩn Bearer Token (DÙNG CHO PROFILE, MẬT KHẨU)
 const verifyToken = async (req, res, next) => {
