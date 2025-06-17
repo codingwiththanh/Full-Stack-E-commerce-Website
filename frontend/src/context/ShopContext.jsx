@@ -6,203 +6,268 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-    const currency = "VNĐ";
-    const delivery_fee = 30000;
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const [search, setSearch] = useState("");
-    const [showSearch, setShowSearch] = useState(false);
-    const [cartItems, setCartItems] = useState({});
-    const [products, setProducts] = useState([]);
-    const [token, setToken] = useState("");
-    const navigate = useNavigate();
+  const currency = "VNĐ";
+  const delivery_fee = 30000;
 
-    const axiosInstance = axios.create({
-        baseURL: backendUrl,
-    });
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [cartItems, setCartItems] = useState({});
+  const [products, setProducts] = useState([]);
+  const [token, setToken] = useState("");
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const requestInterceptor = axiosInstance.interceptors.request.use(
-            (config) => {
-                if (token) {
-                    config.headers.token = token;
-                }
-                return config;
-            },
-            (error) => Promise.reject(error)
-        );
+  const [isAppReady, setIsAppReady] = useState(false);
 
-        const responseInterceptor = axiosInstance.interceptors.response.use(
-            (response) => response,
-            (error) => {
-                if (error.response?.status === 401) {
-                    toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-                    setToken("");
-                    setCartItems({});
-                    localStorage.removeItem("token");
-                    navigate("/login");
-                }
-                return Promise.reject(error);
-            }
-        );
+  const axiosInstance = axios.create({
+    baseURL: backendUrl,
+  });
+  console.log("🌐 backendUrl:", backendUrl);
 
-        return () => {
-            axiosInstance.interceptors.request.eject(requestInterceptor);
-            axiosInstance.interceptors.response.eject(responseInterceptor);
-        };
-    }, [token]);
-
-    const addToCart = async (itemId, size) => {
-        if (!size) {
-            toast.error("Vui lòng chọn kích cỡ");
-            return;
+  useEffect(() => {
+    const requestInterceptor = axiosInstance.interceptors.request.use(
+      (config) => {
+        if (token) {
+          config.headers.token = token;
         }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-        if (!token) {
-            toast.warning("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
-            navigate("/login");
-            return;
+    const responseInterceptor = axiosInstance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+          setToken("");
+          setCartItems({});
+          localStorage.removeItem("token");
+          navigate("/login");
         }
+        return Promise.reject(error);
+      }
+    );
 
-        const updatedCart = structuredClone(cartItems);
-        if (!updatedCart[itemId]) updatedCart[itemId] = {};
-        updatedCart[itemId][size] = (updatedCart[itemId][size] || 0) + 1;
-        setCartItems(updatedCart);
-
-        try {
-            await axios.post(`${backendUrl}/api/cart/add`, { itemId, size }, {
-                headers: { token }
-            });
-              
-        } catch (error) {
-            console.log(error);
-            toast.error(error.message);
-        }
+    return () => {
+      axiosInstance.interceptors.request.eject(requestInterceptor);
+      axiosInstance.interceptors.response.eject(responseInterceptor);
     };
+  }, [token, navigate]);
 
-    const updateQuantity = async (itemId, size, quantity) => {
-        const updatedCart = structuredClone(cartItems);
-        updatedCart[itemId][size] = quantity;
-        setCartItems(updatedCart);
+  const addToCart = async (itemId, size) => {
+    if (!size) {
+      toast.error("Vui lòng chọn kích cỡ");
+      return;
+    }
 
-        try {
-            await axiosInstance.post("/api/cart/update", { itemId, size, quantity });
-        } catch (error) {
-            console.log(error);
-            toast.error(error.message);
+    if (!token) {
+      toast.warning("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      navigate("/login");
+      return;
+    }
+
+    const updatedCart = structuredClone(cartItems);
+    if (!updatedCart[itemId]) updatedCart[itemId] = {};
+    updatedCart[itemId][size] = (updatedCart[itemId][size] || 0) + 1;
+    setCartItems(updatedCart);
+
+    try {
+      await axiosInstance.post("/api/cart/add", { itemId, size });
+      toast.success("Đã thêm vào giỏ hàng");
+    } catch (error) {
+      console.error("Error in addToCart:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng");
+    }
+  };
+
+  const updateQuantity = async (itemId, size, quantity) => {
+    const updatedCart = structuredClone(cartItems);
+    if (quantity === 0) {
+      if (updatedCart[itemId]) {
+        delete updatedCart[itemId][size];
+        if (Object.keys(updatedCart[itemId]).length === 0) {
+          delete updatedCart[itemId];
         }
-    };
+      }
+    } else {
+      updatedCart[itemId][size] = quantity;
+    }
+    setCartItems(updatedCart);
 
-    const getCartCount = () => {
-        return Object.values(cartItems).reduce((total, sizes) => {
-            return total + Object.values(sizes).reduce((sum, qty) => sum + qty, 0);
-        }, 0);
-    };
+    try {
+      await axiosInstance.post("/api/cart/update", { itemId, size, quantity });
+      toast.success("Cập nhật giỏ hàng thành công");
+    } catch (error) {
+      console.error("Error in updateQuantity:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi cập nhật giỏ hàng");
+    }
+  };
+  const placeOrder = async (orderData) => {
+    if (!token) {
+      toast.warning("Bạn cần đăng nhập để đặt hàng!");
+      navigate("/login");
+      return;
+    }
 
-    const getCartAmount = () => {
-        let total = 0;
-        for (const itemId in cartItems) {
-            const product = products.find((p) => p._id === itemId);
-            for (const size in cartItems[itemId]) {
-                total += (product?.price || 0) * cartItems[itemId][size];
-            }
+    const { items, address, amount, paymentMethod } = orderData;
+    if (!items || items.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      return;
+    }
+
+    try {
+      console.log("🔒 Token hiện tại là:", token);
+      // KHÔNG TRUYỀN headers – interceptor sẽ tự gắn token
+      console.log("🛒 Gửi đi:", { items, address, amount, paymentMethod });
+      const response = await axiosInstance.post(
+        "/api/order/place",
+        { items, address, amount, paymentMethod },
+        { headers: { token } } // 👈 Thêm token vào rõ ràng ở đây
+      );
+
+      if (response.data.success) {
+        toast.success("Đặt hàng thành công!");
+        setCartItems(response.data.updatedCartData || {});
+        return response.data.orderId;
+      } else {
+        toast.error(response.data.message || "Lỗi khi đặt hàng");
+      }
+    } catch (error) {
+      console.error("Error in placeOrder:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi đặt hàng");
+      throw error; // để component gọi hàm còn xử lý tiếp được
+    }
+  };
+
+  const getCartCount = () => {
+    return Object.values(cartItems).reduce((total, sizes) => {
+      return total + Object.values(sizes).reduce((sum, qty) => sum + qty, 0);
+    }, 0);
+  };
+
+  const getCartAmount = () => {
+    let total = 0;
+    for (const itemId in cartItems) {
+      const product = products.find((p) => p._id === itemId);
+      for (const size in cartItems[itemId]) {
+        total += (product?.price || 0) * cartItems[itemId][size];
+      }
+    }
+    return total;
+  };
+
+  const getSelectedCartAmount = (selectedItems) => {
+    let total = 0;
+    for (const itemId in cartItems) {
+      const product = products.find((p) => p._id === itemId);
+      for (const size in cartItems[itemId]) {
+        if (selectedItems.includes(`${itemId}-${size}`)) {
+          total += (product?.price || 0) * cartItems[itemId][size];
         }
-        return total;
-    };
+      }
+    }
+    return total;
+  };
 
-    const getProductsData = async () => {
-        try {
-            const res = await axiosInstance.get("/api/product/list");
-            if (res.data.success) {
-                setProducts(res.data.products.reverse());
-            } else {
-                toast.error(res.data.message);
-            }
-        } catch (error) {
-            toast.error(error.message);
+  const getProductsData = async () => {
+    try {
+      const res = await axiosInstance.get("/api/product/list");
+      if (res.data.success) {
+        setProducts(res.data.products.reverse());
+      } else {
+        toast.error(res.data.message || "Lỗi khi tải sản phẩm");
+      }
+    } catch (error) {
+      console.error("Error in getProductsData:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi tải sản phẩm");
+    }
+  };
+
+  const getUserCart = async (overrideToken) => {
+    try {
+      const res = await axiosInstance.post(
+        "/api/cart/get",
+        {},
+        {
+          headers: { token: overrideToken || token },
         }
-    };
+      );
+      if (res.data.success) {
+        setCartItems(res.data.cartData);
+      }
+    } catch (error) {
+      console.error("Error in getUserCart:", error);
+      toast.error("Không thể tải giỏ hàng.");
+    }
+  };
 
-    const getUserCart = async (overrideToken) => {
-        try {
-            const res = await axiosInstance.post(
-                "/api/cart/get",
-                {},
-                {
-                    headers: {
-                        token: overrideToken || token,
-                    },
-                }
-            );
-            if (res.data.success) {
-                setCartItems(res.data.cartData);
-            }
-        } catch (error) {
-            console.log(error);
-            toast.error("Không thể tải giỏ hàng.");
+  useEffect(() => {
+    getProductsData();
+  }, []);
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
+    const savedCart = localStorage.getItem("cartItems");
+
+    if (!token && savedToken) {
+      setToken(savedToken);
+      getUserCart(savedToken).finally(() => setIsAppReady(true));
+    } else if (!token && savedCart) {
+      try {
+        const parsed = JSON.parse(savedCart);
+        if (typeof parsed === "object" && parsed !== null) {
+          setCartItems(parsed);
         }
-    };
-
-    useEffect(() => {
-        getProductsData();
-    }, []);
-
-    useEffect(() => {
-        const savedToken = localStorage.getItem("token");
-        const savedCart = localStorage.getItem("cartItems");
-
-        if (!token && savedToken) {
-            setToken(savedToken);
-            getUserCart(savedToken);
-        } else if (!token && savedCart) {
-            try {
-                const parsed = JSON.parse(savedCart);
-                if (typeof parsed === "object" && parsed !== null) {
-                    setCartItems(parsed);
-                }
-            } catch {
-                localStorage.removeItem("cartItems");
-            }
-        } else if (token) {
-            getUserCart();
-        }
-    }, [token]);
-
-    useEffect(() => {
-        if (!token) {
-            localStorage.setItem("cartItems", JSON.stringify(cartItems));
-        }
-    }, [cartItems, token]);
-
-    const loginSuccess = (newToken) => {
-        localStorage.setItem("token", newToken);
-        setToken(newToken);
+      } catch {
         localStorage.removeItem("cartItems");
-        getUserCart(newToken);
-    };
+      } finally {
+        setIsAppReady(true);
+      }
+    } else {
+      getUserCart().finally(() => setIsAppReady(true));
+    }
+  }, [token]);
 
-    const value = {
-        products,
-        currency,
-        delivery_fee,
-        search,
-        setSearch,
-        showSearch,
-        setShowSearch,
-        cartItems,
-        addToCart,
-        setCartItems,
-        getCartCount,
-        updateQuantity,
-        getCartAmount,
-        navigate,
-        backendUrl,
-        setToken,
-        token,
-        axiosInstance,
-        loginSuccess,
-    };
+  useEffect(() => {
+    if (!token) {
+      localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    }
+  }, [cartItems, token]);
 
-    return <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>;
+  const loginSuccess = (newToken) => {
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+  };
+
+  const value = {
+    products,
+    currency,
+    delivery_fee,
+    search,
+    setSearch,
+    showSearch,
+    setShowSearch,
+    cartItems,
+    addToCart,
+    setCartItems,
+    getCartCount,
+    updateQuantity,
+    getCartAmount,
+    getSelectedCartAmount,
+    placeOrder,
+    navigate,
+    backendUrl,
+    setToken,
+    token,
+    axiosInstance,
+    loginSuccess,
+  };
+
+  if (!isAppReady) return null;
+  return (
+    <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
+  );
 };
 
 export default ShopContextProvider;

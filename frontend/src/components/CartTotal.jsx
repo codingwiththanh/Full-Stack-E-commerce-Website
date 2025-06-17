@@ -1,35 +1,43 @@
-import React, { useContext } from 'react'
-import { ShopContext } from '../context/ShopContext'
+import React, { useContext } from 'react';
+import { ShopContext } from '../context/ShopContext';
 import Title from './Title';
 
-const CartTotal = () => {
+const CartTotal = ({ selectedItems, cartData }) => {
+  const { currency, delivery_fee, getSelectedCartAmount } = useContext(ShopContext);
 
-  const { currency, delivery_fee, getCartAmount } = useContext(ShopContext);
+  const totalAmount = getSelectedCartAmount(selectedItems);
+  const finalAmount = totalAmount === 0 ? 0 : totalAmount + delivery_fee;
 
   return (
-    <div className='w-full'>
-      <div className='text-2xl'>
+    <div className="w-full">
+      <div className="text-2xl">
         <Title text1={'TỔNG'} text2={'TIỀN'} />
       </div>
 
-      <div className='flex flex-col gap-2 mt-2 text-sm'>
-        <div className='flex justify-between'>
+      <div className="flex flex-col gap-2 mt-2 text-sm">
+        <div className="flex justify-between">
           <p>Số tiền</p>
-          <p> {getCartAmount()}{currency}</p>
+          <p>
+            {totalAmount.toLocaleString('vi-VN')} {currency}
+          </p>
         </div>
         <hr />
-        <div className='flex justify-between'>
+        <div className="flex justify-between">
           <p>Phí vận chuyển</p>
-          <p>{delivery_fee} {currency}</p>
+          <p>
+            {totalAmount === 0 ? 0 : delivery_fee.toLocaleString('vi-VN')} {currency}
+          </p>
         </div>
         <hr />
-        <div className='flex justify-between'>
+        <div className="flex justify-between">
           <b>Thanh toán</b>
-          <b>{getCartAmount() === 0 ? 0 : getCartAmount() + delivery_fee} {currency}</b>
+          <b>
+            {finalAmount.toLocaleString('vi-VN')} {currency}
+          </b>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CartTotal
+export default CartTotal;

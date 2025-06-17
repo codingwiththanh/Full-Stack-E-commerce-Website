@@ -10,7 +10,8 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
+
+  const { token, loginSuccess, navigate, backendUrl } = useContext(ShopContext);
 
   const validateForm = () => {
     if (!email.includes('@')) {
@@ -32,17 +33,20 @@ const Login = () => {
     event.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
+
     try {
       let response;
+
       if (currentState === 'Đăng ký') {
         response = await axios.post(`${backendUrl}/api/user/register`, { name, email, password });
       } else {
         response = await axios.post(`${backendUrl}/api/user/login`, { email, password });
       }
+
       if (response.data.success) {
-        setToken(response.data.token);
-        localStorage.setItem('token', response.data.token);
+        loginSuccess(response.data.token); // ✅ Cập nhật token vào Context + localStorage
         toast.success(`${currentState} thành công!`);
+        navigate('/orders'); // ✅ Chuyển hướng sau khi đăng nhập thành công
       } else {
         toast.error(response.data.message);
       }
@@ -56,7 +60,8 @@ const Login = () => {
 
   useEffect(() => {
     if (token) {
-      navigate('/');
+      // nếu đã có token thì chuyển hướng luôn
+      navigate('/orders');
     }
   }, [token, navigate]);
 
@@ -71,6 +76,7 @@ const Login = () => {
             <p className="prata-regular text-2xl sm:text-3xl uppercase">{currentState}</p>
             <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
           </div>
+
           {currentState === 'Đăng ký' && (
             <input
               onChange={(e) => setName(e.target.value)}
@@ -81,6 +87,7 @@ const Login = () => {
               required
             />
           )}
+
           <input
             onChange={(e) => setEmail(e.target.value)}
             value={email}
@@ -97,23 +104,29 @@ const Login = () => {
             placeholder="Mật khẩu"
             required
           />
+
           <div className="w-full flex justify-between text-[18px] mt-1">
             <p className="cursor-pointer hover:text-neutral-900">Quên mật khẩu?</p>
             <p
-              onClick={() => setCurrentState(currentState === 'Đăng nhập' ? 'Đăng ký' : 'Đăng nhập')}
+              onClick={() =>
+                setCurrentState(currentState === 'Đăng nhập' ? 'Đăng ký' : 'Đăng nhập')
+              }
               className="cursor-pointer hover:text-neutral-900 "
             >
               {currentState === 'Đăng nhập' ? 'Tạo tài khoản' : 'Đăng nhập tại đây'}
             </p>
           </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className={`bg-stone-900 text-[#FF1461] uppercase font-medium px-8 py-2 mt-4 hover:bg-neutral-600 transition w-full ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-stone-900 text-[#FF1461] uppercase font-medium px-8 py-2 mt-4 hover:bg-neutral-600 transition w-full ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
           >
             {isLoading ? 'Đang xử lý...' : currentState === 'Đăng nhập' ? 'Đăng nhập' : 'Đăng ký'}
           </button>
         </form>
+
         <div className="w-[405px] h-[525px]">
           <img
             src={assets.contact3}

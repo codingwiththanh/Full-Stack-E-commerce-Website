@@ -1,160 +1,222 @@
-import orderModel from "../models/orderModel.js";
-import userModel from "../models/userModel.js";
+import orderModel from "../models/orderModel.js"; // ✅ Đúng
 
-// global variables
-const currency = 'inr';
+import userModel   from "../models/userModel.js";
+import productModel from "../models/productModel.js";
+
+// Global variables
+const currency = 'VND';
 const deliveryCharge = 30000;
-
-// gateway initialize
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 // Hàm sinh mã đơn hàng duy nhất
 const generateOrderCode = () => {
     return 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-}
+};
 
 // Placing orders using COD Method
 const placeOrder = async (req, res) => {
+    
     try {
-        const userId = req.userId; // ✅ lấy từ middleware
-        const { items, amount, address } = req.body;
+        const userId = req.userId;
+        const { items, amount, address, paymentMethod } = req.body;
+        console.log("📦 Dữ liệu nhận từ frontend:", req.body);
 
-        if (!userId || !items || !amount || !address) {
-            return res.status(400).json({ success: false, message: "Thiếu thông tin đơn hàng." });
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: "Danh sách sản phẩm không hợp lệ!" });
+        }
+        if (typeof address !== "object" || !address.email || !address.dienThoai) {
+            return res.status(400).json({ success: false, message: "Địa chỉ giao hàng không hợp lệ!" });
+        }
+        if (!amount || isNaN(amount)) {
+            return res.status(400).json({ success: false, message: "Số tiền không hợp lệ!" });
+        }
+        if (!paymentMethod || typeof paymentMethod !== "string") {
+            return res.status(400).json({ success: false, message: "Phương thức thanh toán không hợp lệ!" });
+        }
+          
+
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng." });
+        }
+
+        // Validate payment method
+        const validMethods = ["cod", "napas"];
+        console.log("💳 Phương thức thanh toán nhận:", paymentMethod);
+
+        if (!validMethods.includes(paymentMethod)) {
+            return res.status(400).json({ success: false, message: "Phương thức thanh toán không hợp lệ." });
+        }
+
+
+        // Validate items and calculate total
+        let totalAmount = 0;
+        const validItems = [];
+        for (const item of items) {
+            const product = await productModel.findById(item._id);
+            if (!product) {
+                return res.status(400).json({ success: false, message: `Sản phẩm ${item._id} không tồn tại.` });
+            }
+            if (item.quantity <= 0) {
+                return res.status(400).json({ success: false, message: `Số lượng sản phẩm ${item._id} không hợp lệ.` });
+            }
+            totalAmount += product.price * item.quantity;
+            validItems.push({
+                productId: item._id,
+                size: item.size,
+                quantity: item.quantity,
+            });
+        }
+
+        // Validate total amount
+        if (totalAmount + deliveryCharge !== amount) {
+            return res.status(400).json({
+                success: false,
+                message: `Tổng tiền không khớp. Nhận: ${amount}, Dự kiến: ${totalAmount + deliveryCharge}`,
+            });
+        }
+
+        // Validate address
+        const requiredFields = ['ten', 'ho', 'email', 'duongSonha', 'phuongXa', 'dienThoai'];
+        for (const field of requiredFields) {
+            if (!address[field]) {
+                return res.status(400).json({ success: false, message: `Thiếu trường địa chỉ: ${field}` });
+            }
+        }
+
+        if (!/^\d{10}$/.test(address.dienThoai)) {
+            return res.status(400).json({ success: false, message: "Số điện thoại phải có 10 chữ số." });
+        }
+
+        if (!/\S+@\S+\.\S+/.test(address.email)) {
+            return res.status(400).json({ success: false, message: "Email không hợp lệ." });
+        }
+
+        if (paymentMethod === 'napas') {
+            // TODO: Implement Napas payment flow
+            return res.status(501).json({ success: false, message: "Phương thức thanh toán Napas chưa được hỗ trợ." });
         }
 
         const orderData = {
             userId,
-            items,
+            items: validItems,
             address,
             amount,
-            paymentMethod: "COD",
+            paymentMethod,
             payment: false,
             date: Date.now(),
-            orderCode: generateOrderCode()
+            orderCode: generateOrderCode(),
+            status: "Đã đặt hàng",
         };
 
         const newOrder = new orderModel(orderData);
         await newOrder.save();
 
-        await userModel.findByIdAndUpdate(userId, { cartData: {} });
-        res.json({ success: true, message: "Đã đặt hàng" });
-
+        // Update cart: Remove only selected items
+        let cartData = user.cartData || {};
+        for (const item of items) {
+            if (cartData[item._id]) {
+                delete cartData[item._id][item.size];
+                if (Object.keys(cartData[item._id]).length === 0) {
+                    delete cartData[item._id];
+                }
+            }
+        }
+        await userModel.findByIdAndUpdate(userId, { cartData });
+        console.log("✅ Đơn hàng đã được lưu:", newOrder._id)
+        res.json({
+            success: true,
+            message: "Đã đặt hàng",
+            orderId: newOrder._id,
+            updatedCartData: cartData,
+        });
     } catch (error) {
-        console.log(error);
+        console.error('Error in placeOrder:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
+// User Order Data For Frontend
+const userOrders = async (req, res) => {
+    console.log("🛒 Nhận request lấy đơn hàng người dùng:", req.userId);
+    try {
+        const userId = req.userId;
+        const orders = await orderModel
+            .find({ userId })
+            .populate('items.productId')
+            .sort({ date: -1 });
 
-// Placing orders using Stripe Method
-// const placeOrderStripe = async (req, res) => {
-//     try {
-//         const { userId, items, amount, address } = req.body
-//         const { origin } = req.headers;
+        const formattedOrders = orders.map((order) => ({
+            _id: order._id,
+            items: order.items.map((item) => ({
+                productId: item.productId._id,
+                name: item.productId.name,
+                image: item.productId.image,
+                price: item.productId.price,
+                size: item.size,
+                quantity: item.quantity,
+            })),
+            address: order.address,
+            amount: order.amount,
+            status: order.status,
+            payment: order.payment,
+            paymentMethod: order.paymentMethod,
+            date: order.date,
+            orderCode: order.orderCode,
+        }));
 
-//         const orderData = {
-//             userId,
-//             items,
-//             address,
-//             amount,
-//             paymentMethod: "Stripe",
-//             payment: false,
-//             date: Date.now(),
-//             orderCode: generateOrderCode()
-//         }
-
-//         const newOrder = new orderModel(orderData)
-//         await newOrder.save()
-
-//         const line_items = items.map((item) => ({
-//             price_data: {
-//                 currency: currency,
-//                 product_data: { name: item.name },
-//                 unit_amount: item.price * 100
-//             },
-//             quantity: item.quantity
-//         }))
-
-//         line_items.push({
-//             price_data: {
-//                 currency: currency,
-//                 product_data: { name: 'Delivery Charges' },
-//                 unit_amount: deliveryCharge * 100
-//             },
-//             quantity: 1
-//         })
-
-//         const session = await stripe.checkout.sessions.create({
-//             success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-//             cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
-//             line_items,
-//             mode: 'payment',
-//         })
-
-//         res.json({ success: true, session_url: session.url });
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
-
-// Verify Stripe 
-// const verifyStripe = async (req, res) => {
-//     const { orderId, success, userId } = req.body
-//     try {
-//         if (success === "true") {
-//             await orderModel.findByIdAndUpdate(orderId, { payment: true });
-//             await userModel.findByIdAndUpdate(userId, { cartData: {} })
-//             res.json({ success: true });
-//         } else {
-//             await orderModel.findByIdAndDelete(orderId)
-//             res.json({ success: false })
-//         }
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
+        res.json({ success: true, orders: formattedOrders });
+    } catch (error) {
+        console.error('Error in userOrders:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 // All Orders data for Admin Panel
 const allOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find({})
-        res.json({ success: true, orders })
+        const orders = await orderModel
+            .find({})
+            .populate('items.productId')
+            .sort({ date: -1 });
+
+        const formattedOrders = orders.map((order) => ({
+            _id: order._id,
+            items: order.items.map((item) => ({
+                productId: item.productId._id,
+                name: item.productId.name,
+                image: item.productId.image,
+                price: item.productId.price,
+                size: item.size,
+                quantity: item.quantity,
+            })),
+            address: order.address,
+            amount: order.amount,
+            status: order.status,
+            payment: order.payment,
+            paymentMethod: order.paymentMethod,
+            date: order.date,
+            orderCode: order.orderCode,
+        }));
+
+        res.json({ success: true, orders: formattedOrders });
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        console.error('Error in allOrders:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
-}
+};
 
-// User Order Data For Frontend
-const userOrders = async (req, res) => {
-    try {
-        const userId = req.userId;
-
-        const orders = await orderModel.find({ userId })
-        res.json({ success: true, orders })
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-}
-
-
-// update order status from Admin Panel
+// Update order status from Admin Panel
 const updateStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body;
-
-        // Bạn nên kiểm tra danh sách status hợp lệ nếu cần
         const allowedStatuses = [
             "Đã đặt hàng",
             "Chờ đóng gói",
             "Đã gửi hàng",
             "Đang giao hàng",
             "Đã giao hàng",
-            "Đã huỷ"
+            "Đã huỷ",
         ];
 
         if (!allowedStatuses.includes(status)) {
@@ -164,39 +226,41 @@ const updateStatus = async (req, res) => {
         await orderModel.findByIdAndUpdate(orderId, { status });
         res.json({ success: true, message: 'Đã cập nhật trạng thái' });
     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
+        console.error('Error in updateStatus:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
-  
 
-// delete order from Admin Panel
+// Delete order from Admin Panel
 const deleteOrder = async (req, res) => {
     try {
-        const { orderId } = req.body
-        await orderModel.findByIdAndDelete(orderId)
-        res.json({ success: true, message: 'Order Deleted' })
+        const { orderId } = req.body;
+        await orderModel.findByIdAndDelete(orderId);
+        res.json({ success: true, message: 'Đã xóa đơn hàng' });
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        console.error('Error in deleteOrder:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
-}
-// update order info from Admin Panel
+};
+
+// Update order address from Admin Panel
 const updateOrderAddress = async (req, res) => {
     try {
         const { orderId, newAddress } = req.body;
         await orderModel.findByIdAndUpdate(orderId, { address: newAddress });
         res.json({ success: true, message: 'Cập nhật địa chỉ thành công' });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        console.error('Error in updateOrderAddress:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
-  
+
+// Cancel order
 const cancelOrder = async (req, res) => {
     try {
         const order = await orderModel.findById(req.params.id);
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found" });
+            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
         }
 
         if (!["Đã đặt hàng", "Chờ đóng gói"].includes(order.status)) {
@@ -206,11 +270,11 @@ const cancelOrder = async (req, res) => {
         order.status = "Đã huỷ";
         await order.save();
         res.json({ success: true, message: "Đơn hàng đã được huỷ" });
-    } catch (err) {
-        console.error("Huỷ đơn thất bại:", err);
-        res.status(500).json({ success: false, message: err.message });
+    } catch (error) {
+        console.error('Error in cancelOrder:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
-  };
+};
 
 export {
     placeOrder,
@@ -220,4 +284,4 @@ export {
     deleteOrder,
     updateOrderAddress,
     cancelOrder,
-}
+};

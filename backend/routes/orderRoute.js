@@ -1,33 +1,23 @@
-import express from 'express'
+import express from "express";
 import {
-    placeOrder,
-    allOrders,
-    userOrders,
-    updateStatus,
-    deleteOrder,
-    updateOrderAddress,
-    cancelOrder  
-} from '../controllers/orderController.js'
-import adminAuth from '../middleware/adminAuth.js'
-import {authUser} from '../middleware/auth.js'
+  placeOrder,
+  allOrders,
+  userOrders,
+  updateStatus,
+  deleteOrder,
+  updateOrderAddress,
+  cancelOrder,
+} from "../controllers/orderController.js";
+import { verifyToken } from "../middleware/auth.js";
 
-const orderRouter = express.Router()
+const router = express.Router();
 
-// Admin Features
-orderRouter.post('/list', adminAuth, allOrders)
-orderRouter.post('/status', adminAuth, updateStatus)
-orderRouter.post('/delete', adminAuth, deleteOrder) 
-orderRouter.post('/update-address', adminAuth, updateOrderAddress)
+router.post("/place", verifyToken, placeOrder);
+router.post("/userorders", verifyToken, userOrders);
+router.get("/all", verifyToken, allOrders); // Thêm middleware admin nếu cần
+router.put("/status", verifyToken, updateStatus);
+router.put("/cancel/:id", verifyToken, cancelOrder);
+router.put("/address", verifyToken, updateOrderAddress);
+router.delete("/delete", verifyToken, deleteOrder);
 
-// Payment Features
-orderRouter.post('/place', authUser, placeOrder)
-
-// User Feature 
-orderRouter.post('/userorders', authUser, userOrders)
-
-// verify payment
-
-orderRouter.put("/cancel/:id", authUser, cancelOrder);
-
-
-export default orderRouter
+export default router;

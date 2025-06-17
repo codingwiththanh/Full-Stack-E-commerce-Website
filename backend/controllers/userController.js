@@ -106,10 +106,18 @@ const changePassword = async (req, res) => {
 
 const getUserInfo = async (req, res) => {
     try {
-        const user = await userModel.findById(req.body.userId).select("name email");
-        res.status(200).json(user);
+        // ✅ Sử dụng req.userId từ middleware đã giải mã token
+        const user = await userModel.findById(req.userId).select("name email");
+        if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+
+        res.status(200).json({
+            success: true,
+            name: user.name,
+            email: user.email,
+        });
     } catch (err) {
-        res.status(500).json("Không thể lấy thông tin người dùng");
+        console.error("getUserInfo error:", err);
+        res.status(500).json({ success: false, message: "Không thể lấy thông tin người dùng" });
     }
 };
 

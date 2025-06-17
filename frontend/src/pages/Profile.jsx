@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import axios from "axios";
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
+
 const Profile = () => {
-    const { token } = useContext(ShopContext);
+    const { token, axiosInstance } = useContext(ShopContext);
     const [user, setUser] = useState({});
     const [formData, setFormData] = useState({ name: "", email: "" });
     const [showPasswordFields, setShowPasswordFields] = useState(false);
@@ -17,12 +17,10 @@ const Profile = () => {
     useEffect(() => {
         const fetchUser = async () => {
             if (!token) return;
-
             try {
-                const res = await axios.get("/api/user/me", {
-                    headers: { Authorization: `Bearer ${token}` },
+                const res = await axiosInstance.get("/api/user/me", {
+                    headers: { token },
                 });
-                console.log("User info:", res.data);
                 setUser(res.data);
                 setFormData({
                     name: res.data.name || "",
@@ -45,19 +43,11 @@ const Profile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!user._id) {
-            alert("Không tìm thấy ID người dùng để cập nhật.");
-            return;
-        }
+        if (!user._id) return alert("Không tìm thấy ID người dùng để cập nhật.");
 
         try {
-            console.log("Token gửi lên:", token);
-
-            const updateUser = axios.put(`/api/user/${user._id}`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            const updateUser = axiosInstance.put(`/api/user/${user._id}`, formData, {
+                headers: { token },
             });
 
             let changePassword = Promise.resolve();
@@ -68,12 +58,10 @@ const Profile = () => {
                     return;
                 }
 
-                changePassword = axios.put(
+                changePassword = axiosInstance.put(
                     `/api/user/${user._id}/password`,
                     passwordData,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { token } }
                 );
             }
 
@@ -87,13 +75,9 @@ const Profile = () => {
 
     return (
         <div className="flex justify-center items-center">
-            <div className="flex flex-col sm:flex-row justify-center items-center my-8 gap-8 flex-wrap shadow-2xl w-[90%] max-w-4xl bg-white ">
+            <div className="flex flex-col sm:flex-row justify-center items-center my-8 gap-8 flex-wrap shadow-2xl w-[90%] max-w-4xl bg-white">
                 <div className="w-[405px] h-[525px]">
-                    <img
-                        src={assets.meme1}
-                        alt="Hình minh họa đăng nhập"
-                        className="object-cover w-full h-full "
-                    />
+                    <img src={assets.contact3} alt="Hình minh họa đăng nhập" className="object-cover w-full h-full" />
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col items-center w-full sm:w-[45%] gap-4 text-gray-800">
@@ -117,7 +101,7 @@ const Profile = () => {
 
                     <button
                         type="button"
-                        className="text-blue-600 underline text-sm text-left "
+                        className="text-blue-600 underline text-sm text-left"
                         onClick={() => setShowPasswordFields((prev) => !prev)}
                     >
                         {showPasswordFields ? "Huỷ đổi mật khẩu" : "Đổi mật khẩu"}
@@ -159,7 +143,6 @@ const Profile = () => {
                         Lưu thay đổi
                     </button>
                 </form>
-
             </div>
         </div>
     );
