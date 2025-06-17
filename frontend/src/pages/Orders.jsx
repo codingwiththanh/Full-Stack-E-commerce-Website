@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const Orders = () => {
   const { token, currency, axiosInstance, navigate, delivery_fee } =
@@ -46,7 +48,18 @@ const Orders = () => {
   };
 
   const cancelOrder = async (orderId) => {
-    if (!window.confirm("Bạn có chắc muốn huỷ đơn hàng này không?")) return;
+    const result = await Swal.fire({
+      title: "Xác nhận huỷ đơn hàng",
+      text: "Bạn có chắc muốn huỷ đơn hàng này không?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Có, huỷ đơn!",
+      cancelButtonText: "Không, giữ lại",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const response = await axiosInstance.put(

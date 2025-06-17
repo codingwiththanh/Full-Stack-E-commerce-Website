@@ -3,7 +3,8 @@ import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 import axiosInstance from "../utils/axiosInstance";
 import { currency } from "../constants/config";
-
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 
 const Orders = ({ token }) => {
@@ -41,7 +42,18 @@ const Orders = ({ token }) => {
   
 
   const handleDelete = async (orderId) => {
-    if (!window.confirm("Xác nhận xoá đơn hàng này?")) return;
+    const result = await Swal.fire({
+      title: "Xác nhận xoá đơn hàng",
+      text: "Bạn có chắc chắn muốn xoá đơn hàng này không?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Xoá",
+      cancelButtonText: "Huỷ",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const response = await axiosInstance.delete("/api/order/delete", {

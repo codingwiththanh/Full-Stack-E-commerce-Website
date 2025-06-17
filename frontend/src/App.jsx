@@ -25,7 +25,7 @@ const App = () => {
     <div>
       <Navbar />
       <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
-        <ToastContainer />
+        <ToastContainer className={"mt-24 mr-16"} />
         <SearchBar />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -52,6 +52,7 @@ const App = () => {
               </PrivateRoute>
             }
           />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
           <Route path="/place-order" element={<PlaceOrder />} />
         </Routes>
