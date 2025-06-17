@@ -4,7 +4,7 @@ import Title from "../components/Title";
 import { toast } from "react-toastify";
 
 const Orders = () => {
-  const { backendUrl, token, currency, axiosInstance, navigate } =
+  const { backendUrl, token, currency, axiosInstance, navigate, delivery_fee } =
     useContext(ShopContext);
   const [orderData, setOrderData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,14 +18,12 @@ const Orders = () => {
         "/api/order/userorders",
         {},
         {
-          headers: {
-            token: token, // ✅ THÊM token rõ ràng vào headers
-          },
+          headers: { token },
         }
       );
 
       if (response.data.success) {
-        let allOrdersItem = [];
+        let allItems = [];
         response.data.orders.forEach((order) => {
           order.items.forEach((item) => {
             item.status = order.status;
@@ -34,10 +32,10 @@ const Orders = () => {
             item.date = order.date;
             item.orderId = order._id;
             item.orderCode = order.orderCode;
-            allOrdersItem.push(item);
+            allItems.push(item);
           });
         });
-        setOrderData(allOrdersItem.reverse());
+        setOrderData(allItems.reverse());
       } else {
         toast.error(
           response.data.message || "Không thể tải danh sách đơn hàng"
@@ -80,6 +78,28 @@ const Orders = () => {
     }
   }, [token, navigate]);
 
+  // Gom sản phẩm theo orderId
+  const groupedOrders = {};
+  orderData
+    .filter((item) => item.status !== "Đã huỷ")
+    .forEach((item) => {
+      const orderId = item.orderId;
+      if (!groupedOrders[orderId]) {
+        groupedOrders[orderId] = {
+          orderInfo: {
+            status: item.status,
+            payment: item.payment,
+            paymentMethod: item.paymentMethod,
+            date: item.date,
+            orderId: item.orderId,
+            orderCode: item.orderCode,
+          },
+          items: [],
+        };
+      }
+      groupedOrders[orderId].items.push(item);
+    });
+
   return (
     <div className="py-10 px-4">
       <div className="text-2xl text-center">
@@ -88,7 +108,7 @@ const Orders = () => {
 
       {isLoading ? (
         <div className="text-center py-10">Đang tải đơn hàng...</div>
-      ) : orderData.length === 0 ? (
+      ) : Object.keys(groupedOrders).length === 0 ? (
         <div className="text-center py-10">
           <p className="text-lg text-gray-500">Bạn chưa có đơn hàng nào.</p>
           <button
@@ -99,79 +119,107 @@ const Orders = () => {
           </button>
         </div>
       ) : (
-        <div className="mt-6 space-y-4">
-          {orderData
-            .filter((item) => item.status !== "Đã huỷ")
-            .map((item, index) => (
-              <div
-                key={index}
-                className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white rounded-lg shadow-sm"
-              >
-                <div className="flex items-start gap-4 text-sm">
-                  <img
-                    className="w-16 h-16 object-cover rounded"
-                    src={item.image[0]}
-                    alt={item.name}
-                  />
-                  <div>
-                    <p className="sm:text-base font-medium">{item.name}</p>
-                    <div className="flex flex-col gap-1 mt-1 text-gray-600">
+        <div className="mt-6 space-y-6">
+          {Object.values(groupedOrders)
+            .sort((a, b) => b.orderInfo.date - a.orderInfo.date)
+            .map((order, index) => {
+              const totalAmount = order.items.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0
+              );
+              const finalAmount = totalAmount + delivery_fee;
+
+              return (
+                <div key={index} className="p-4 border rounded bg-white shadow">
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <p className="text-sm text-gray-600">
+                        Mã đơn: {order.orderInfo.orderCode}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Ngày đặt:{" "}
+                        {new Date(order.orderInfo.date).toLocaleDateString(
+                          "vi-VN"
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Phương thức: {order.orderInfo.paymentMethod}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Trạng thái: {order.orderInfo.status}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            order.orderInfo.status === "Đã giao hàng"
+                              ? "bg-green-500"
+                              : "bg-yellow-500"
+                          }`}
+                        ></span>
+                        <p className="text-sm md:text-base">
+                          {order.orderInfo.status}
+                        </p>
+                      </div>
+                      {["Đã đặt hàng", "Chờ đóng gói"].includes(
+                        order.orderInfo.status
+                      ) && (
+                        <button
+                          onClick={() => cancelOrder(order.orderInfo.orderId)}
+                          className="border px-4 py-2 text-sm font-medium text-red-600 border-red-600 hover:bg-red-50"
+                        >
+                          Huỷ đơn
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {order.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex gap-4 border-t pt-4 text-sm text-gray-700"
+                      >
+                        <img
+                          className="w-16 h-16 object-cover rounded"
+                          src={item.image[0]}
+                          alt={item.name}
+                        />
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p>
+                            Giá:{" "}
+                            {(item.price * item.quantity).toLocaleString(
+                              "vi-VN"
+                            )}{" "}
+                            {currency}
+                          </p>
+                          <p>Số lượng: {item.quantity}</p>
+                          <p>Kích cỡ: {item.size}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* ✅ Tổng tiền ở đây */}
+                    <div className="pt-4 border-t text-right text-sm text-gray-800">
                       <p>
-                        Giá:{" "}
-                        {(item.price * item.quantity).toLocaleString("vi-VN")}{" "}
+                        Tổng tiền hàng: {totalAmount.toLocaleString("vi-VN")}{" "}
                         {currency}
                       </p>
-                      <p>Số lượng: {item.quantity}</p>
-                      <p>Kích cỡ: {item.size}</p>
                       <p>
-                        Ngày đặt:{" "}
-                        <span className="text-gray-400">
-                          {new Date(item.date).toLocaleDateString("vi-VN")}
-                        </span>
+                        Phí vận chuyển: {delivery_fee.toLocaleString("vi-VN")}{" "}
+                        {currency}
                       </p>
-                      <p>
-                        Mã đơn hàng:{" "}
-                        <span className="text-gray-400">{item.orderCode}</span>
-                      </p>
-                      <p>
-                        Phương thức:{" "}
-                        <span className="text-gray-400">
-                          {item.paymentMethod}
-                        </span>
+                      <p className="font-semibold text-base text-black">
+                        Tổng cộng: {finalAmount.toLocaleString("vi-VN")}{" "}
+                        {currency}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="md:w-1/3 flex flex-col items-end gap-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        item.status === "Đã giao hàng"
-                          ? "bg-green-500"
-                          : "bg-yellow-500"
-                      }`}
-                    ></span>
-                    <p className="text-sm md:text-base">{item.status}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={loadOrderData}
-                      className="border px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200"
-                    >
-                      Cập nhật trạng thái
-                    </button>
-                    {["Đã đặt hàng", "Chờ đóng gói"].includes(item.status) && (
-                      <button
-                        onClick={() => cancelOrder(item.orderId)}
-                        className="border px-4 py-2 text-sm font-medium text-red-600 border-red-600 hover:bg-red-50"
-                      >
-                        Huỷ đơn
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       )}
     </div>

@@ -40,4 +40,4 @@ const CartTotal = ({ selectedItems, cartData }) => {
   );
 };
 
-export default CartTotal;
+export default CartTotal; 

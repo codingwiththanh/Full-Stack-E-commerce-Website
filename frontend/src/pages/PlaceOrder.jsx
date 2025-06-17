@@ -44,19 +44,21 @@ const PlaceOrder = () => {
         return;
       }
 
-      // Validate form data
+      // ⚠️ Kiểm tra thông tin bắt buộc
       const requiredFields = [
         "ten",
         "ho",
         "email",
         "duongSonha",
         "phuongXa",
+        "quanHuyen",
+        "thanhPho",
         "dienThoai",
       ];
       for (const field of requiredFields) {
         if (!formData[field]) {
           toast.error(
-            `Vui lòng điền ${field.replace(/([A-Z])/g, " $1").toLowerCase()}`
+            `Vui lòng điền đủ thông tin!`
           );
           return;
         }
@@ -75,14 +77,9 @@ const PlaceOrder = () => {
       if (method === "napas") {
         toast.warning("Phương thức thanh toán Napas chưa được hỗ trợ!");
         return;
-        // TODO: Implement Napas payment flow
-        // const response = await axiosInstance.post('/api/order/place-napas', { items: selectedCartData, address: formData });
-        // if (response.data.success) {
-        //   window.location.href = response.data.session_url;
-        // }
       }
 
-      // Calculate amount for validation
+      // Tính tổng tiền
       let totalAmount = 0;
       for (const item of selectedCartData) {
         const product = products.find((p) => p._id === item._id);
@@ -92,6 +89,7 @@ const PlaceOrder = () => {
         }
         totalAmount += product.price * item.quantity;
       }
+
       const finalAmount = totalAmount + delivery_fee;
 
       const orderData = {
@@ -99,6 +97,7 @@ const PlaceOrder = () => {
         address: formData,
         amount: finalAmount,
         paymentMethod: method,
+        payment: method === "cod" ? true : false,
       };
 
       const orderId = await placeOrder(orderData);
@@ -107,9 +106,7 @@ const PlaceOrder = () => {
       }
     } catch (error) {
       console.error("Error in placeOrder:", error);
-      console.error("🛠️ Request headers:", error.config?.headers);
       toast.error(error.response?.data?.message || "Lỗi khi đặt hàng");
-      throw error;
     }
   };
 
@@ -143,38 +140,34 @@ const PlaceOrder = () => {
         </div>
         <div className="flex gap-3 mt-4">
           <input
-            required
-            onChange={onChangeHandler}
             name="ho"
             value={formData.ho}
+            onChange={onChangeHandler}
             className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
             type="text"
             placeholder="Họ"
           />
           <input
-            required
-            onChange={onChangeHandler}
             name="ten"
             value={formData.ten}
+            onChange={onChangeHandler}
             className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
             type="text"
             placeholder="Tên"
           />
         </div>
         <input
-          required
-          onChange={onChangeHandler}
           name="email"
           value={formData.email}
+          onChange={onChangeHandler}
           className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
           type="email"
           placeholder="Địa chỉ email"
         />
         <input
-          required
-          onChange={onChangeHandler}
           name="dienThoai"
           value={formData.dienThoai}
+          onChange={onChangeHandler}
           className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
           type="text"
           inputMode="numeric"
@@ -182,36 +175,34 @@ const PlaceOrder = () => {
           placeholder="Điện thoại"
         />
         <input
-          required
-          onChange={onChangeHandler}
           name="duongSonha"
           value={formData.duongSonha}
+          onChange={onChangeHandler}
           className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
           type="text"
           placeholder="Đường"
         />
         <div className="flex gap-3">
           <input
-            required
-            onChange={onChangeHandler}
             name="phuongXa"
             value={formData.phuongXa}
+            onChange={onChangeHandler}
             className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
             type="text"
             placeholder="Phường"
           />
           <input
-            onChange={onChangeHandler}
             name="quanHuyen"
             value={formData.quanHuyen}
+            onChange={onChangeHandler}
             className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
             type="text"
             placeholder="Quận"
           />
           <input
-            onChange={onChangeHandler}
             name="thanhPho"
             value={formData.thanhPho}
+            onChange={onChangeHandler}
             className="border border-gray-300 py-1.5 px-3.5 w-full rounded"
             type="text"
             placeholder="Thành phố"

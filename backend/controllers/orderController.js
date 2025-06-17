@@ -16,7 +16,8 @@ const generateOrderCode = () => {
 const placeOrder = async (req, res) => {
   try {
     const userId = req.userId;
-    const { items, amount, address, paymentMethod } = req.body;
+    const { items, amount, address, paymentMethod, payment } = req.body;
+
     console.log("📦 Dữ liệu nhận từ frontend:", req.body);
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -50,10 +51,7 @@ const placeOrder = async (req, res) => {
         .json({ success: false, message: "Không tìm thấy người dùng." });
     }
 
-    // Validate payment method
     const validMethods = ["cod", "napas"];
-    console.log("💳 Phương thức thanh toán nhận:", paymentMethod);
-
     if (!validMethods.includes(paymentMethod)) {
       return res
         .status(400)
@@ -63,7 +61,6 @@ const placeOrder = async (req, res) => {
         });
     }
 
-    // Validate items and calculate total
     let totalAmount = 0;
     const validItems = [];
     for (const item of items) {
@@ -92,7 +89,6 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // Validate total amount
     if (totalAmount + deliveryCharge !== amount) {
       return res.status(400).json({
         success: false,
@@ -102,7 +98,6 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // Validate address
     const requiredFields = [
       "ten",
       "ho",
@@ -132,7 +127,6 @@ const placeOrder = async (req, res) => {
     }
 
     if (paymentMethod === "napas") {
-      // TODO: Implement Napas payment flow
       return res
         .status(501)
         .json({
@@ -147,7 +141,7 @@ const placeOrder = async (req, res) => {
       address,
       amount,
       paymentMethod,
-      payment: false,
+      payment: payment ?? false, // ✅ Ghi đúng giá trị payment từ frontend
       date: Date.now(),
       orderCode: generateOrderCode(),
       status: "Đã đặt hàng",
@@ -156,7 +150,7 @@ const placeOrder = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    // Update cart: Remove only selected items
+    // Cập nhật giỏ hàng người dùng
     let cartData = user.cartData || {};
     for (const item of items) {
       if (cartData[item._id]) {
@@ -167,6 +161,7 @@ const placeOrder = async (req, res) => {
       }
     }
     await userModel.findByIdAndUpdate(userId, { cartData });
+
     console.log("✅ Đơn hàng đã được lưu:", newOrder._id);
     res.json({
       success: true,

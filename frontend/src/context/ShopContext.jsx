@@ -110,20 +110,19 @@ const ShopContextProvider = (props) => {
       return;
     }
 
-    const { items, address, amount, paymentMethod } = orderData;
-    if (!items || items.length === 0) {
+    if (!orderData.items || orderData.items.length === 0) {
       toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
       return;
     }
 
     try {
       console.log("🔒 Token hiện tại là:", token);
-      // KHÔNG TRUYỀN headers – interceptor sẽ tự gắn token
-      console.log("🛒 Gửi đi:", { items, address, amount, paymentMethod });
+      console.log("🛒 Gửi đi:", orderData);
+
       const response = await axiosInstance.post(
         "/api/order/place",
-        { items, address, amount, paymentMethod },
-        { headers: { token } } // 👈 Thêm token vào rõ ràng ở đây
+        orderData, // ✅ Gửi full orderData bao gồm payment
+        { headers: { token } }
       );
 
       if (response.data.success) {
@@ -136,9 +135,10 @@ const ShopContextProvider = (props) => {
     } catch (error) {
       console.error("Error in placeOrder:", error);
       toast.error(error.response?.data?.message || "Lỗi khi đặt hàng");
-      throw error; // để component gọi hàm còn xử lý tiếp được
+      throw error;
     }
   };
+  
 
   const getCartCount = () => {
     return Object.values(cartItems).reduce((total, sizes) => {
@@ -270,4 +270,4 @@ const ShopContextProvider = (props) => {
   );
 };
 
-export default ShopContextProvider;
+export default ShopContextProvider; 
