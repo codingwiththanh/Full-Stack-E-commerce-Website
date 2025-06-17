@@ -2,14 +2,7 @@
 import jwt from "jsonwebtoken";
 
 const authUser = (req, res, next) => {
-  let token = req.headers.token;
-
-  // Nếu không có trong headers.token thì thử lấy từ Authorization
-  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  console.log("🔑 Token nhận được:", token);
+  let token = req.headers.authorization?.split(" ")[1]; // Lấy từ Authorization
 
   if (!token) {
     return res.status(401).json({ success: false, message: "Không có token" });
@@ -28,23 +21,15 @@ const authUser = (req, res, next) => {
 
 // Xác thực chuẩn Bearer Token (DÙNG CHO PROFILE, MẬT KHẨU)
 const verifyToken = (req, res, next) => {
-  let token = req.headers.token;
+  const authHeader = req.headers.authorization;
 
-  // Nếu không có token trong headers.token thì thử lấy từ Authorization
-  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  // ✅ Log ra trước khi kiểm tra
-  console.log("🧪 Token (headers.token):", req.headers.token);
-  console.log("🧪 Token (authorization):", req.headers.authorization);
-  console.log("🧪 Token used for verify:", token);
-
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res
       .status(401)
       .json({ success: false, message: "Token không tồn tại" });
   }
+
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -56,5 +41,6 @@ const verifyToken = (req, res, next) => {
       .json({ success: false, message: "Token không hợp lệ" });
   }
 };
+
 
 export { authUser, verifyToken };

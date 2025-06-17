@@ -5,7 +5,7 @@ import productModel from "../models/productModel.js";
 
 // Global variables
 const currency = "VND";
-const deliveryCharge = 30000;
+const deliveryCharge = 30000; 
 
 // Hàm sinh mã đơn hàng duy nhất
 const generateOrderCode = () => {

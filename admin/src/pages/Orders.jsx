@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { backendUrl, currency } from "../App";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
+import axiosInstance from "../utils/axiosInstance";
+import { currency } from "../constants/config";
+
+
 
 const Orders = ({ token }) => {
   const [orders, setOrders] = useState([]);
@@ -10,12 +12,8 @@ const Orders = ({ token }) => {
   const [editAddress, setEditAddress] = useState(null);
 
   const fetchAllOrders = async () => {
-    if (!token) return;
-
     try {
-      const response = await axios.get(`${backendUrl}/api/order/all`, {
-        headers: { token },
-      });
+      const response = await axiosInstance.get("/api/order/all");
       if (response.data.success) {
         setOrders(response.data.orders.reverse());
       } else {
@@ -25,14 +23,14 @@ const Orders = ({ token }) => {
       toast.error(error.message);
     }
   };
+  
 
   const statusHandler = async (event, orderId) => {
     try {
-      const response = await axios.put(
-        `${backendUrl}/api/order/status`,
-        { orderId, status: event.target.value },
-        { headers: { token } }
-      );
+      const response = await axiosInstance.put("/api/order/status", {
+        orderId,
+        status: event.target.value,
+      });
       if (response.data.success) {
         await fetchAllOrders();
       }
@@ -40,14 +38,14 @@ const Orders = ({ token }) => {
       toast.error(error.message);
     }
   };
+  
 
   const handleDelete = async (orderId) => {
     if (!window.confirm("Xác nhận xoá đơn hàng này?")) return;
 
     try {
-      const response = await axios.delete(`${backendUrl}/api/order/delete`, {
+      const response = await axiosInstance.delete("/api/order/delete", {
         data: { orderId },
-        headers: { token },
       });
       if (response.data.success) {
         toast.success("Đã xoá đơn hàng");
@@ -59,6 +57,7 @@ const Orders = ({ token }) => {
       toast.error("Xoá thất bại");
     }
   };
+  
 
   const openEditForm = (order) => {
     setEditingOrderId(order._id);
@@ -67,14 +66,10 @@ const Orders = ({ token }) => {
 
   const saveEditedAddress = async (orderId) => {
     try {
-      const res = await axios.put(
-        `${backendUrl}/api/order/address`,
-        {
-          orderId,
-          newAddress: editAddress,
-        },
-        { headers: { token } }
-      );
+      const res = await axiosInstance.put("/api/order/address", {
+        orderId,
+        newAddress: editAddress,
+      });
 
       if (res.data.success) {
         toast.success("Đã cập nhật địa chỉ");
@@ -87,6 +82,7 @@ const Orders = ({ token }) => {
       toast.error("Lỗi cập nhật địa chỉ");
     }
   };
+  
 
   useEffect(() => {
     fetchAllOrders();

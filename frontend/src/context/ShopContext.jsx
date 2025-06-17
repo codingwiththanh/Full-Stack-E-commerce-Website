@@ -16,51 +16,42 @@ const ShopContextProvider = (props) => {
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
   const navigate = useNavigate();
-
   const [isAppReady, setIsAppReady] = useState(false);
 
   const axiosInstance = axios.create({
     baseURL: backendUrl,
   });
-  console.log("🌐 backendUrl:", backendUrl);
-
-  useEffect(() => {
-    const requestInterceptor = axiosInstance.interceptors.request.use(
-      (config) => {
-        if (token) {
-          config.headers.token = token;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    const responseInterceptor = axiosInstance.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-          setToken("");
-          setCartItems({});
-          localStorage.removeItem("token");
-          navigate("/login");
-        }
-        return Promise.reject(error);
+  
+  axiosInstance.interceptors.request.use(
+    (config) => {
+      const storedToken = localStorage.getItem("token") || token;
+      if (storedToken) {
+        config.headers.Authorization = `Bearer ${storedToken}`;
       }
-    );
-
-    return () => {
-      axiosInstance.interceptors.request.eject(requestInterceptor);
-      axiosInstance.interceptors.response.eject(responseInterceptor);
-    };
-  }, [token, navigate]);
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+  
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        setToken("");
+        setCartItems({});
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+      return Promise.reject(error);
+    }
+  );
 
   const addToCart = async (itemId, size) => {
     if (!size) {
       toast.error("Vui lòng chọn kích cỡ");
       return;
     }
-
     if (!token) {
       toast.warning("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
       navigate("/login");
@@ -103,6 +94,7 @@ const ShopContextProvider = (props) => {
       toast.error(error.response?.data?.message || "Lỗi khi cập nhật giỏ hàng");
     }
   };
+
   const placeOrder = async (orderData) => {
     if (!token) {
       toast.warning("Bạn cần đăng nhập để đặt hàng!");
@@ -116,15 +108,7 @@ const ShopContextProvider = (props) => {
     }
 
     try {
-      console.log("🔒 Token hiện tại là:", token);
-      console.log("🛒 Gửi đi:", orderData);
-
-      const response = await axiosInstance.post(
-        "/api/order/place",
-        orderData, // ✅ Gửi full orderData bao gồm payment
-        { headers: { token } }
-      );
-
+      const response = await axiosInstance.post("/api/order/place", orderData);
       if (response.data.success) {
         toast.success("Đặt hàng thành công!");
         setCartItems(response.data.updatedCartData || {});
@@ -138,7 +122,6 @@ const ShopContextProvider = (props) => {
       throw error;
     }
   };
-  
 
   const getCartCount = () => {
     return Object.values(cartItems).reduce((total, sizes) => {
@@ -184,15 +167,9 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  const getUserCart = async (overrideToken) => {
+  const getUserCart = async () => {
     try {
-      const res = await axiosInstance.post(
-        "/api/cart/get",
-        {},
-        {
-          headers: { token: overrideToken || token },
-        }
-      );
+      const res = await axiosInstance.post("/api/cart/get", {});
       if (res.data.success) {
         setCartItems(res.data.cartData);
       }
@@ -212,7 +189,7 @@ const ShopContextProvider = (props) => {
 
     if (!token && savedToken) {
       setToken(savedToken);
-      getUserCart(savedToken).finally(() => setIsAppReady(true));
+      getUserCart().finally(() => setIsAppReady(true));
     } else if (!token && savedCart) {
       try {
         const parsed = JSON.parse(savedCart);
@@ -270,4 +247,4 @@ const ShopContextProvider = (props) => {
   );
 };
 
-export default ShopContextProvider; 
+export default ShopContextProvider;

@@ -4,8 +4,10 @@ import Title from "../components/Title";
 import { toast } from "react-toastify";
 
 const Orders = () => {
-  const { backendUrl, token, currency, axiosInstance, navigate, delivery_fee } =
+  const { token, currency, axiosInstance, navigate, delivery_fee } =
     useContext(ShopContext);
+    console.log("TOKEN:", token);
+
   const [orderData, setOrderData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,13 +16,7 @@ const Orders = () => {
     try {
       if (!token) return;
 
-      const response = await axiosInstance.post(
-        "/api/order/userorders",
-        {},
-        {
-          headers: { token },
-        }
-      );
+      const response = await axiosInstance.post("/api/order/userorders", {});
 
       if (response.data.success) {
         let allItems = [];

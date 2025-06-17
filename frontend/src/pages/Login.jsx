@@ -46,7 +46,7 @@ const Login = () => {
       if (response.data.success) {
         loginSuccess(response.data.token); // ✅ Cập nhật token vào Context + localStorage
         toast.success(`${currentState} thành công!`);
-        navigate('/orders'); // ✅ Chuyển hướng sau khi đăng nhập thành công
+        navigate('/'); // ✅ Chuyển hướng sau khi đăng nhập thành công
       } else {
         toast.error(response.data.message);
       }
