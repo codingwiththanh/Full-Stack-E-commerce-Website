@@ -27,7 +27,7 @@ const Cart = () => {
   }, [cartItems, products]);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="px-4">
       <div className="text-2xl pt-8 pb-2 text-center">
         <Title text1={'GIỎ HÀNG'} text2={'CỦA BẠN'} />
       </div>
@@ -37,7 +37,8 @@ const Cart = () => {
         {/* Desktop Table */}
         <table className="hidden sm:table w-full text-left text-gray-700 border">
           <colgroup>
-            <col style={{ width: '60%' }} />
+            <col style={{ width: '5%'}} />
+            <col style={{ width: '55%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '15%' }} />
@@ -45,6 +46,7 @@ const Cart = () => {
           </colgroup>
           <thead className="text-xl font-semibold text-neutral-900">
             <tr>
+              <th className="text-center pl-4 py-3">Chọn</th>
               <th className="pl-4 py-3">Sản phẩm</th>
               <th className="text-center py-3">Kích cỡ</th>
               <th className="text-center py-3">Số lượng</th>
@@ -58,6 +60,9 @@ const Cart = () => {
               if (!productData) return null;
               return (
                 <tr key={index} className="border-t">
+                  <td class="p-4 pl-6">
+                    <input type="checkbox" class="h-5 w-5 text-blue-600 border-gray-300 cursor-pointer" />
+                  </td>
                   <td className="flex items-center gap-4 py-4">
                     <img className="w-20 pl-4" src={productData.image[0]} alt={productData.name} />
                     <p className="text-lg font-medium">{productData.name}</p>
