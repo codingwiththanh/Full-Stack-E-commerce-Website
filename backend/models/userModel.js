@@ -1,12 +1,35 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    cartData: { type: Object, default: {} }
-}, { minimize: false })
+// Định nghĩa schema cho người dùng
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    }, // Tên người dùng
 
-const userModel = mongoose.models.user || mongoose.model('user',userSchema);
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    }, // Email người dùng (phải duy nhất)
 
-export default userModel
+    password: {
+      type: String,
+      required: true,
+    }, // Mật khẩu đã mã hoá (bằng bcrypt)
+
+    cartData: {
+      type: Object,
+      default: {},
+    }, // Giỏ hàng của người dùng, lưu theo dạng: { productId: { size: quantity, ... }, ... }
+  },
+  {
+    minimize: false, // Đảm bảo lưu cả object rỗng trong MongoDB
+  }
+);
+
+// Tạo model, tránh tạo lại nếu đã tồn tại
+const userModel = mongoose.models.user || mongoose.model("user", userSchema);
+
+export default userModel;

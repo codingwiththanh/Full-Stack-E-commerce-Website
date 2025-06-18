@@ -1,110 +1,112 @@
-import { v2 as cloudinary } from "cloudinary"
-import productModel from "../models/productModel.js"
+import { v2 as cloudinary } from "cloudinary";
+import productModel from "../models/productModel.js";
 
-// function for add product 
+//  Thêm sản phẩm mới (kèm upload ảnh lên Cloudinary)
 const addProduct = async (req, res) => {
-    try {
+  try {
+    const {
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      sizes,
+      bestseller,
+    } = req.body;
 
-        const { name, description, price, category, subCategory, sizes, bestseller } = req.body
+    // Lấy các file ảnh đã upload (tối đa 4 ảnh)
+    const image1 = req.files.image1 && req.files.image1[0];
+    const image2 = req.files.image2 && req.files.image2[0];
+    const image3 = req.files.image3 && req.files.image3[0];
+    const image4 = req.files.image4 && req.files.image4[0];
 
-        const image1 = req.files.image1 && req.files.image1[0]
-        const image2 = req.files.image2 && req.files.image2[0]
-        const image3 = req.files.image3 && req.files.image3[0]
-        const image4 = req.files.image4 && req.files.image4[0]
+    const images = [image1, image2, image3, image4].filter(Boolean);
 
-        const images = [image1, image2, image3, image4].filter((item) => item !== undefined)
+    // Tải ảnh lên Cloudinary và lấy URL
+    const imagesUrl = await Promise.all(
+      images.map(async (item) => {
+        const result = await cloudinary.uploader.upload(item.path, {
+          resource_type: "image",
+        });
+        return result.secure_url;
+      })
+    );
 
-        let imagesUrl = await Promise.all(
-            images.map(async (item) => {
-                let result = await cloudinary.uploader.upload(item.path, { resource_type: 'image' });
-                return result.secure_url
-            })
-        )
+    const productData = {
+      name,
+      description,
+      category,
+      price: Number(price),
+      subCategory,
+      bestseller: bestseller === "true",
+      sizes: JSON.parse(sizes),
+      image: imagesUrl,
+      date: Date.now(),
+    };
 
-        const productData = {
-            name,
-            description,
-            category,
-            price: Number(price),
-            subCategory,
-            bestseller: bestseller === "true" ? true : false,
-            sizes: JSON.parse(sizes),
-            image: imagesUrl,
-            date: Date.now()
-        }
+    const product = new productModel(productData);
+    await product.save();
 
-        console.log(productData);
-
-        const product = new productModel(productData);
-        await product.save()
-
-        res.json({ success: true, message: "Product Added" })
-
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-
-}
-console.log("CLOUDINARY CONFIG:", cloudinary.config());
-
-// function for list product
-const listProducts = async (req, res) => {
-    try {
-
-        const products = await productModel.find({});
-        res.json({ success: true, products })
-
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-}
-
-// function for removing product
-const removeProduct = async (req, res) => {
-    try {
-
-        await productModel.findByIdAndDelete(req.body.id)
-        res.json({ success: true, message: "Product Removed" })
-
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-}
-
-// function for updating product
-const updateProduct = async (req, res) => {
-    try {
-        const { productId, updatedData } = req.body;
-
-        if (!productId || !updatedData) {
-            return res.json({ success: false, message: 'Thiếu dữ liệu' });
-        }
-
-        await productModel.findByIdAndUpdate(productId, updatedData);
-        res.json({ success: true, message: 'Cập nhật sản phẩm thành công' });
-    } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: 'Lỗi máy chủ' });
-    }
+    res.json({ success: true, message: "Product Added" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
 };
 
+//  Thông báo cấu hình cloudinary (để kiểm tra có kết nối đúng không)
+console.log("Đã kết nối:", cloudinary.config());
 
-// function for single product info
-const singleProduct = async (req, res) => {
-    try {
+// Lấy toàn bộ danh sách sản phẩm
+const listProducts = async (req, res) => {
+  try {
+    const products = await productModel.find({});
+    res.json({ success: true, products });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
 
-        const { productId } = req.body
-        const product = await productModel.findById(productId)
-        res.json({ success: true, product })
+// Xoá sản phẩm theo ID
+const removeProduct = async (req, res) => {
+  try {
+    await productModel.findByIdAndDelete(req.body.id);
+    res.json({ success: true, message: "Product Removed" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
 
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+// Cập nhật sản phẩm (từ form admin)
+const updateProduct = async (req, res) => {
+  try {
+    const { productId, updatedData } = req.body;
+
+    if (!productId || !updatedData) {
+      return res.json({ success: false, message: "Thiếu dữ liệu" });
     }
-}
 
+    await productModel.findByIdAndUpdate(productId, updatedData);
+    res.json({ success: true, message: "Cập nhật sản phẩm thành công" });
+  } catch (error) {
+    res.json({ success: false, message: "Lỗi máy chủ" });
+  }
+};
 
-export { listProducts, addProduct, removeProduct, updateProduct, singleProduct }
+//  Lấy chi tiết sản phẩm theo ID
+const singleProduct = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const product = await productModel.findById(productId);
+    res.json({ success: true, product });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export {
+  listProducts,
+  addProduct,
+  removeProduct,
+  updateProduct,
+  singleProduct,
+};
