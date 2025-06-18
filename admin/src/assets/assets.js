@@ -5,6 +5,7 @@ import upload_area from './upload_area.png'
 import parcel_icon from './parcel_icon.svg'
 import pen from './pen.png'
 import close from './close.png'
+import search_icpon from './search_icon.png'
 
 export const assets = {
     logo,
@@ -14,5 +15,6 @@ export const assets = {
     parcel_icon,
     pen,
     close,
+    search_icpon,
 }
 

@@ -5,18 +5,32 @@ import axiosInstance from "../utils/axiosInstance";
 import { currency } from "../constants/config";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import SearchBar from "../components/Search";
 
-
+// Component quản lý danh sách đơn hàng
 const Orders = ({ token }) => {
-  const [orders, setOrders] = useState([]);
+  // Danh sách tất cả đơn hàng
+  const [allOrders, setAllOrders] = useState([]);
+
+  // Danh sách đơn hàng đã lọc (sau khi tìm kiếm)
+  const [filteredOrders, setFilteredOrders] = useState([]);
+
+  // ID đơn hàng đang chỉnh sửa
   const [editingOrderId, setEditingOrderId] = useState(null);
+
+  // Dữ liệu địa chỉ đang chỉnh sửa
   const [editAddress, setEditAddress] = useState(null);
 
+  // Hàm lấy danh sách đơn hàng từ server
   const fetchAllOrders = async () => {
     try {
       const response = await axiosInstance.get("/api/order/all");
       if (response.data.success) {
-        setOrders(response.data.orders.reverse());
+        const sortedOrders = response.data.orders.sort(
+          (a, b) => new Date(b.date) - new Date(a.date)
+        );
+        setAllOrders(sortedOrders);
+        setFilteredOrders(sortedOrders);
       } else {
         toast.error(response.data.message);
       }
@@ -24,8 +38,25 @@ const Orders = ({ token }) => {
       toast.error(error.message);
     }
   };
-  
 
+  // Tìm kiếm đơn hàng theo tên người nhận hoặc mã đơn
+  const handleSearch = (keyword) => {
+    if (!keyword.trim()) {
+      setFilteredOrders(allOrders);
+      return;
+    }
+
+    const lower = keyword.toLowerCase();
+    const filtered = allOrders.filter((order) => {
+      const fullName = `${order.address.ho} ${order.address.ten}`.toLowerCase();
+      const code = order.orderCode?.toLowerCase() || "";
+      return fullName.includes(lower) || code.includes(lower);
+    });
+
+    setFilteredOrders(filtered);
+  };
+
+  // Xử lý cập nhật trạng thái đơn hàng
   const statusHandler = async (event, orderId) => {
     try {
       const response = await axiosInstance.put("/api/order/status", {
@@ -39,8 +70,8 @@ const Orders = ({ token }) => {
       toast.error(error.message);
     }
   };
-  
 
+  // Xử lý xoá đơn hàng
   const handleDelete = async (orderId) => {
     const result = await Swal.fire({
       title: "Xác nhận xoá đơn hàng",
@@ -69,14 +100,32 @@ const Orders = ({ token }) => {
       toast.error("Xoá thất bại");
     }
   };
-  
 
+  // Mở form sửa địa chỉ đơn hàng
   const openEditForm = (order) => {
     setEditingOrderId(order._id);
     setEditAddress({ ...order.address });
   };
 
+  // Lưu địa chỉ sau khi chỉnh sửa
   const saveEditedAddress = async (orderId) => {
+    const requiredFields = [
+      { key: "ho", label: "Họ" },
+      { key: "ten", label: "Tên" },
+      { key: "dienThoai", label: "Số điện thoại" },
+      { key: "duongSonha", label: "Đường" },
+      { key: "phuongXa", label: "Phường/Xã" },
+      { key: "quanHuyen", label: "Quận/Huyện" },
+      { key: "thanhPho", label: "Thành phố" },
+    ];
+
+    for (const field of requiredFields) {
+      if (!editAddress[field.key]?.trim()) {
+        toast.warn(`Vui lòng nhập ${field.label}`);
+        return;
+      }
+    }
+
     try {
       const res = await axiosInstance.put("/api/order/address", {
         orderId,
@@ -94,24 +143,33 @@ const Orders = ({ token }) => {
       toast.error("Lỗi cập nhật địa chỉ");
     }
   };
-  
 
+  // Gọi API khi token thay đổi
   useEffect(() => {
     fetchAllOrders();
   }, [token]);
 
   return (
-    <div className="p-4 pr-[32px]">
-      <p className="mb-4 font-semibold text-2xl">Tất cả đơn hàng</p>
+    <div className="p-6 overflow-x-auto">
+      <div className="mb-4 flex justify-between items-center">
+        <p className=" text-2xl font-bold text-neutral-800">TẤT CẢ ĐƠN HÀNG</p>
+
+        {/* Có thể mở rộng thêm lọc theo trạng thái hoặc phương thức thanh toán */}
+        <SearchBar onSearch={handleSearch} />
+      </div>
+
       <div>
-        {orders.map((order, index) => (
+        {filteredOrders.map((order, index) => (
           <div
-            className="relative grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_1fr] lg:grid-cols-[0.5fr_2fr_1fr_1.3fr_1fr] gap-3 items-start border-2 border-gray-200 p-5 md:p-8 my-3 md:my-4 text-xs sm:text-sm text-gray-700"
             key={index}
+            className="relative grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_1fr] lg:grid-cols-[0.5fr_2fr_1fr_1.3fr_1fr] gap-3 items-start border-2 border-[#e7a9be] p-5 md:p-8 my-3 md:my-4 text-xs sm:text-sm text-neutral-900"
           >
+            {/* Icon */}
             <img className="w-12 pt-[10px]" src={assets.parcel_icon} alt="" />
+
+            {/* Chi tiết đơn hàng */}
             <div>
-              <p className="mt-2 text-[13px] font-semibold text-sky-500">
+              <p className="mt-2 text-[16px] font-semibold text-sky-600">
                 Mã đơn hàng: {order.orderCode}
               </p>
               <div className="mt-[20px]">
@@ -149,11 +207,12 @@ const Orders = ({ token }) => {
               </div>
             </div>
 
+            {/* Thông tin thêm */}
             <div className="mt-2">
-              <p className="text-sm text-sky-500">
+              <p className="text-[16px] font-semibold text-sky-600">
                 Sản phẩm: {order.items.length}
               </p>
-              <div className="mt-[42px]">
+              <div className="mt-[22px]">
                 <p className="mt-3">Phương thức: {order.paymentMethod}</p>
                 <p>
                   Thanh toán:{" "}
@@ -165,23 +224,24 @@ const Orders = ({ token }) => {
                       : "Chưa thanh toán"}
                   </span>
                 </p>
-
                 <p>Ngày: {new Date(order.date).toLocaleDateString()}</p>
               </div>
             </div>
 
-            <p className="text-sm mt-2 text-center text-sky-500">
+            {/* Tổng tiền */}
+            <p className="text-[16px] font-semibold mt-2 text-center text-sky-600">
               <span>Hoá đơn :</span> {order.amount.toLocaleString("vi-VN")}{" "}
               {currency}
             </p>
 
+            {/* Hành động */}
             <div className="flex flex-col gap-3">
               <div>
                 {order.status !== "Đã huỷ" ? (
                   <select
                     onChange={(e) => statusHandler(e, order._id)}
                     value={order.status}
-                    className="w-full p-2.5 text-sm font-semibold bg-gray-50 border border-gray-300 focus:border-sky-500 transition-colors text-sky-500"
+                    className="w-full p-2.5 text-[16px] font-semibold bg-gray-50 border border-gray-300 focus:border-sky-500 transition-colors text-sky-500"
                   >
                     <option className="text-black" value="Đã đặt hàng">
                       Đã đặt hàng
@@ -200,7 +260,7 @@ const Orders = ({ token }) => {
                     </option>
                   </select>
                 ) : (
-                  <p className="text-red-600 font-semibold mt-[8px] mb-[8px] text-sm">
+                  <p className="text-red-600 font-semibold mt-[8px] mb-[8px] text-[16px]">
                     Đơn đã huỷ
                   </p>
                 )}
@@ -224,6 +284,7 @@ const Orders = ({ token }) => {
               </div>
             </div>
 
+            {/* Form chỉnh sửa địa chỉ */}
             {editingOrderId === order._id && (
               <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
                 <div className="bg-white p-6 shadow-2xl lg:w-[25%]">
